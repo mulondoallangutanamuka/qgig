@@ -20,7 +20,6 @@
             
             <div class="nav-menu" id="navMenu">
                 <ul class="nav-links">
-                    <li><a href="{{ url_for('web.home') }}"><i class="fas fa-home"></i> Home</a></li>
                     <li><a href="{{ url_for('web.browse_gigs') }}"><i class="fas fa-search"></i> Browse Gigs</a></li>
                     
                     {% if current_user %}
@@ -35,6 +34,10 @@
                         
                         <li><a href="{{ url_for('web.notifications') }}"><i class="fas fa-bell"></i> Notifications
                             {% if notification_count > 0 %}<span class="badge">{{ notification_count }}</span>{% endif %}
+                        </a></li>
+                        
+                        <li><a href="{{ url_for('messages.inbox') }}"><i class="fas fa-envelope"></i> Messages
+                            <span id="message-badge" class="badge" style="display: none;"></span>
                         </a></li>
                         
                         <li class="dropdown">
@@ -122,9 +125,9 @@
                 <div class="footer-col">
                     <h4>Contact Us</h4>
                     <ul>
-                        <li><i class="fas fa-envelope"></i> support@qgig.com</li>
-                        <li><i class="fas fa-phone"></i> +254 700 000 000</li>
-                        <li><i class="fas fa-map-marker-alt"></i> Nairobi, Kenya</li>
+                        <li><i class="fas fa-envelope"></i> support@qgig.ug</li>
+                        <li><i class="fas fa-phone"></i> +256 700 000 000</li>
+                        <li><i class="fas fa-map-marker-alt"></i> Kampala, Uganda</li>
                     </ul>
                 </div>
             </div>
@@ -202,6 +205,27 @@
                 })
                 .catch(error => console.error('Error updating notification badge:', error));
         }
+        
+        // Update message badge
+        function updateMessageBadge() {
+            fetch('/messages/api/unread-count')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('message-badge');
+                    if (badge) {
+                        if (data.unread_count > 0) {
+                            badge.textContent = data.unread_count;
+                            badge.style.display = 'inline';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating message badge:', error));
+        }
+        
+        // Update both badges on page load
+        updateMessageBadge();
         
         // Show toast notification
         function showToast(title, message, type = 'info') {
@@ -497,13 +521,57 @@
         
         // Listen for interest accepted notifications (Professional receives)
         socket.on('interest_accepted', function(data) {
-            console.log('Interest accepted:', data);
-            showToast(
-                'Interest Accepted! ✅',
-                `${data.institution_name} accepted your interest in "${data.job_title}"`,
-                'success'
-            );
+            console.log('=== INTEREST ACCEPTED NOTIFICATION ===');
+            console.log('Full data:', data);
+            console.log('Chat URL:', data.chat_url);
+            
+            // Show enhanced toast with chat button
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast notification-toast-success';
+            toast.style.animation = 'slideIn 0.3s ease-out';
+            
+            toast.innerHTML = `
+                <div class="toast-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="toast-content">
+                    <strong>Interest Accepted! ✅</strong>
+                    <p>${data.institution_name} accepted your interest in "${data.job_title}"</p>
+                    <p style="margin-top: 8px; font-size: 12px; opacity: 0.9;">
+                        <i class="fas fa-envelope"></i> A welcome message is waiting for you!
+                    </p>
+                    ${data.chat_url ? `
+                        <a href="${data.chat_url}" class="btn btn-sm btn-primary" style="margin-top: 8px; font-size: 12px; animation: pulse 2s infinite;">
+                            <i class="fas fa-comments"></i> Open Chat Now
+                        </a>
+                        <p style="margin-top: 4px; font-size: 11px; color: #666;">Redirecting in 2 seconds...</p>
+                    ` : ''}
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            document.body.appendChild(toast);
+            playNotificationSound();
             updateNotificationBadge();
+            updateMessageBadge();
+            
+            // Auto-redirect to chat after 2 seconds if chat_url is provided
+            if (data.chat_url) {
+                console.log('Will redirect to:', data.chat_url, 'in 2 seconds');
+                setTimeout(() => {
+                    console.log('Redirecting now to:', data.chat_url);
+                    window.location.href = data.chat_url;
+                }, 2000);
+            } else {
+                console.warn('No chat_url provided in notification data');
+                // Auto remove after 10 seconds if no chat_url
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 10000);
+            }
         });
         
         // Listen for interest rejected notifications (Professional receives)

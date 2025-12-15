@@ -132,6 +132,13 @@
                                         <span class="badge-success">
                                             <i class="fas fa-check-circle"></i> Accepted
                                         </span>
+                                        {% if current_user and current_user.role.value == 'professional' %}
+                                        <a href="{{ url_for('messages.conversation', other_user_id=notification.job_interest.job.institution.user_id) }}" 
+                                           class="btn btn-primary btn-sm"
+                                           style="animation: pulse 2s infinite;">
+                                            <i class="fas fa-comments"></i> Open Chat
+                                        </a>
+                                        {% endif %}
                                     {% elif notification.job_interest and notification.job_interest.status.value in ['rejected', 'declined'] %}
                                         <span class="badge-danger">
                                             <i class="fas fa-times-circle"></i> Rejected
@@ -196,31 +203,39 @@ async function acceptInterest(interestId, notificationId) {
         const data = await response.json();
         
         if (response.ok) {
-            showSuccess('✓ Interest accepted! Professional has been assigned to the job.');
-            
-            // Fade out buttons
-            if (acceptBtn) {
-                acceptBtn.style.transition = 'opacity 0.3s';
-                acceptBtn.style.opacity = '0';
-                setTimeout(() => acceptBtn.remove(), 300);
-            }
-            if (rejectBtn) {
-                rejectBtn.style.transition = 'opacity 0.3s';
-                rejectBtn.style.opacity = '0';
-                setTimeout(() => rejectBtn.remove(), 300);
-            }
-            
-            // Add badge
-            const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
-            if (notifElement) {
-                const actionsDiv = notifElement.querySelector('[style*="display: flex"]');
-                if (actionsDiv) {
-                    setTimeout(() => {
-                        const badge = document.createElement('span');
-                        badge.className = 'badge-success';
-                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Accepted';
-                        actionsDiv.appendChild(badge);
-                    }, 350);
+            // Immediately redirect to chat if URL is provided
+            if (data.chat_url) {
+                showSuccess('✓ Interest accepted! Opening chat with professional...');
+                setTimeout(() => {
+                    window.location.href = data.chat_url;
+                }, 800);
+            } else {
+                showSuccess('✓ Interest accepted! Professional has been assigned to the job.');
+                
+                // Fade out buttons
+                if (acceptBtn) {
+                    acceptBtn.style.transition = 'opacity 0.3s';
+                    acceptBtn.style.opacity = '0';
+                    setTimeout(() => acceptBtn.remove(), 300);
+                }
+                if (rejectBtn) {
+                    rejectBtn.style.transition = 'opacity 0.3s';
+                    rejectBtn.style.opacity = '0';
+                    setTimeout(() => rejectBtn.remove(), 300);
+                }
+                
+                // Add badge
+                const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                if (notifElement) {
+                    const actionsDiv = notifElement.querySelector('[style*="display: flex"]');
+                    if (actionsDiv) {
+                        setTimeout(() => {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge-success';
+                            badge.innerHTML = '<i class="fas fa-check-circle"></i> Accepted';
+                            actionsDiv.appendChild(badge);
+                        }, 350);
+                    }
                 }
             }
         } else {

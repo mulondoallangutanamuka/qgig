@@ -1,18 +1,581 @@
 {% extends "base.html" %}
 {% block title %}Settings - QGig{% endblock %}
-{% block content %}
-<div class="container">
-    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
-        <i class="fas fa-cog"></i> Settings
-    </h1>
+
+{% block extra_css %}
+<style>
+    .settings-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
     
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Account Settings</h3>
+    .settings-header {
+        margin-bottom: 2rem;
+    }
+    
+    .settings-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .settings-header p {
+        color: var(--gray-600);
+        font-size: 1rem;
+    }
+    
+    .settings-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    
+    .settings-section h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .settings-section h2 i {
+        color: var(--primary-color);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+    
+    .form-group input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .form-group input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    }
+    
+    .form-group small {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--gray-600);
+        font-size: 0.875rem;
+    }
+    
+    .btn-settings {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1rem;
+    }
+    
+    .btn-primary {
+        background: var(--primary-color);
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+    }
+    
+    .btn-danger {
+        background: var(--danger-color);
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        background: #c0392b;
+        transform: translateY(-1px);
+    }
+    
+    .danger-zone {
+        border: 2px solid var(--danger-color);
+        border-radius: 12px;
+        padding: 1.5rem;
+        background: #fff5f5;
+    }
+    
+    .danger-zone h3 {
+        color: var(--danger-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .info-box {
+        background: #f0f7ff;
+        border-left: 4px solid var(--primary-color);
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-box p {
+        margin: 0;
+        color: var(--text-primary);
+    }
+    
+    .checkbox-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border: 1px solid var(--gray-300);
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .checkbox-group:hover {
+        background: var(--gray-50);
+    }
+    
+    .checkbox-group input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+    }
+    
+    .checkbox-group label {
+        margin: 0;
+        cursor: pointer;
+        flex: 1;
+    }
+    
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        display: none;
+    }
+    
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .alert-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .account-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        padding: 1rem;
+        background: var(--gray-50);
+        border-radius: 8px;
+    }
+    
+    .info-item label {
+        font-size: 0.875rem;
+        color: var(--gray-600);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-item p {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+    <div class="settings-header">
+        <h1><i class="fas fa-cog"></i> Settings</h1>
+        <p>Manage your account settings and preferences</p>
+    </div>
+    
+    <!-- Account Information -->
+    <div class="settings-section">
+        <h2><i class="fas fa-user"></i> Account Information</h2>
+        <div class="account-info">
+            <div class="info-item">
+                <label>Email Address</label>
+                <p>{{ current_user.email }}</p>
+            </div>
+            <div class="info-item">
+                <label>Account Type</label>
+                <p>{{ current_user.role.value.title() }}</p>
+            </div>
+            <div class="info-item">
+                <label>Member Since</label>
+                <p>{{ current_user.created_at.strftime('%B %d, %Y') }}</p>
+            </div>
         </div>
-        <div class="card-body">
-            <p style="color: var(--gray-600);">Settings page coming soon...</p>
+    </div>
+    
+    <!-- Change Password -->
+    <div class="settings-section">
+        <h2><i class="fas fa-lock"></i> Change Password</h2>
+        <div id="password-alert" class="alert"></div>
+        
+        <form id="change-password-form">
+            <div class="form-group">
+                <label for="current_password">Current Password</label>
+                <input type="password" id="current_password" name="current_password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required minlength="8">
+                <small>Password must be at least 8 characters long</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+            </div>
+            
+            <button type="submit" class="btn-settings btn-primary">
+                <i class="fas fa-save"></i> Change Password
+            </button>
+        </form>
+    </div>
+    
+    <!-- Update Email -->
+    <div class="settings-section">
+        <h2><i class="fas fa-envelope"></i> Update Email Address</h2>
+        <div id="email-alert" class="alert"></div>
+        
+        <form id="update-email-form">
+            <div class="form-group">
+                <label for="new_email">New Email Address</label>
+                <input type="email" id="new_email" name="new_email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email_password">Confirm Password</label>
+                <input type="password" id="email_password" name="password" required>
+                <small>Enter your password to confirm this change</small>
+            </div>
+            
+            <button type="submit" class="btn-settings btn-primary">
+                <i class="fas fa-save"></i> Update Email
+            </button>
+        </form>
+    </div>
+    
+    <!-- Notification Preferences -->
+    <div class="settings-section">
+        <h2><i class="fas fa-bell"></i> Notification Preferences</h2>
+        <div id="notification-alert" class="alert"></div>
+        
+        <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> Choose which notifications you want to receive</p>
+        </div>
+        
+        <form id="notification-preferences-form">
+            <div class="checkbox-group">
+                <input type="checkbox" id="email_notifications" name="email_notifications" checked>
+                <label for="email_notifications">
+                    <strong>Email Notifications</strong><br>
+                    <small>Receive important updates via email</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="job_notifications" name="job_notifications" checked>
+                <label for="job_notifications">
+                    <strong>Job Updates</strong><br>
+                    <small>Get notified about new jobs and interest responses</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="message_notifications" name="message_notifications" checked>
+                <label for="message_notifications">
+                    <strong>Message Notifications</strong><br>
+                    <small>Receive alerts when you get new messages</small>
+                </label>
+            </div>
+            
+            <div class="checkbox-group">
+                <input type="checkbox" id="marketing_notifications" name="marketing_notifications">
+                <label for="marketing_notifications">
+                    <strong>Marketing & Promotions</strong><br>
+                    <small>Receive news, tips, and promotional content</small>
+                </label>
+            </div>
+            
+            <button type="submit" class="btn-settings btn-primary">
+                <i class="fas fa-save"></i> Save Preferences
+            </button>
+        </form>
+    </div>
+    
+    <!-- Privacy & Security -->
+    <div class="settings-section">
+        <h2><i class="fas fa-shield-alt"></i> Privacy & Security</h2>
+        
+        <div class="info-box">
+            <p><i class="fas fa-info-circle"></i> Your data is encrypted and secure. We never share your information with third parties.</p>
+        </div>
+        
+        <div class="account-info">
+            <div class="info-item">
+                <label>Last Login</label>
+                <p>{{ current_user.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+            </div>
+            <div class="info-item">
+                <label>Account Status</label>
+                <p style="color: var(--success-color);">
+                    <i class="fas fa-check-circle"></i> Active
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Danger Zone -->
+    <div class="settings-section">
+        <div class="danger-zone">
+            <h3><i class="fas fa-exclamation-triangle"></i> Danger Zone</h3>
+            <div id="delete-alert" class="alert"></div>
+            
+            <p style="margin-bottom: 1.5rem; color: var(--text-primary);">
+                Once you delete your account, there is no going back. This action will permanently delete:
+            </p>
+            
+            <ul style="margin-bottom: 1.5rem; color: var(--text-primary);">
+                <li>Your profile and all personal information</li>
+                <li>All your job posts or applications</li>
+                <li>All messages and conversations</li>
+                <li>All documents and uploaded files</li>
+                <li>All notifications and activity history</li>
+            </ul>
+            
+            <button type="button" class="btn-settings btn-danger" onclick="showDeleteModal()">
+                <i class="fas fa-trash-alt"></i> Delete Account
+            </button>
         </div>
     </div>
 </div>
+
+<!-- Delete Account Modal -->
+<div id="delete-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%;">
+        <h3 style="color: var(--danger-color); margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-triangle"></i> Delete Account
+        </h3>
+        
+        <p style="margin-bottom: 1.5rem; color: var(--text-primary);">
+            This action cannot be undone. All your data will be permanently deleted.
+        </p>
+        
+        <form id="delete-account-form">
+            <div class="form-group">
+                <label for="delete_password">Enter Your Password</label>
+                <input type="password" id="delete_password" name="password" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="delete_confirmation">Type <strong>DELETE</strong> to confirm</label>
+                <input type="text" id="delete_confirmation" name="confirmation" required placeholder="DELETE">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                <button type="button" class="btn-settings" style="background: var(--gray-300); color: var(--text-primary); flex: 1;" onclick="hideDeleteModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-settings btn-danger" style="flex: 1;">
+                    <i class="fas fa-trash-alt"></i> Delete Forever
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Change Password
+document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const alert = document.getElementById('password-alert');
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/settings/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert.className = 'alert alert-success';
+            alert.textContent = data.message;
+            alert.style.display = 'block';
+            e.target.reset();
+        } else {
+            alert.className = 'alert alert-error';
+            alert.textContent = data.error;
+            alert.style.display = 'block';
+        }
+    } catch (error) {
+        alert.className = 'alert alert-error';
+        alert.textContent = 'An error occurred. Please try again.';
+        alert.style.display = 'block';
+    }
+});
+
+// Update Email
+document.getElementById('update-email-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const alert = document.getElementById('email-alert');
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/settings/update-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert.className = 'alert alert-success';
+            alert.textContent = data.message + ' Please refresh the page.';
+            alert.style.display = 'block';
+            e.target.reset();
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            alert.className = 'alert alert-error';
+            alert.textContent = data.error;
+            alert.style.display = 'block';
+        }
+    } catch (error) {
+        alert.className = 'alert alert-error';
+        alert.textContent = 'An error occurred. Please try again.';
+        alert.style.display = 'block';
+    }
+});
+
+// Notification Preferences
+document.getElementById('notification-preferences-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const alert = document.getElementById('notification-alert');
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/settings/notification-preferences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert.className = 'alert alert-success';
+            alert.textContent = data.message;
+            alert.style.display = 'block';
+            setTimeout(() => alert.style.display = 'none', 3000);
+        } else {
+            alert.className = 'alert alert-error';
+            alert.textContent = data.error;
+            alert.style.display = 'block';
+        }
+    } catch (error) {
+        alert.className = 'alert alert-error';
+        alert.textContent = 'An error occurred. Please try again.';
+        alert.style.display = 'block';
+    }
+});
+
+// Delete Account Modal
+function showDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'flex';
+}
+
+function hideDeleteModal() {
+    document.getElementById('delete-modal').style.display = 'none';
+    document.getElementById('delete-account-form').reset();
+}
+
+// Delete Account
+document.getElementById('delete-account-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const alert = document.getElementById('delete-alert');
+    const formData = new FormData(e.target);
+    
+    if (!confirm('Are you absolutely sure? This action CANNOT be undone!')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/settings/delete-account', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.fromEntries(formData))
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert.className = 'alert alert-success';
+            alert.textContent = 'Account deleted successfully. Redirecting...';
+            alert.style.display = 'block';
+            setTimeout(() => window.location.href = data.redirect, 2000);
+        } else {
+            alert.className = 'alert alert-error';
+            alert.textContent = data.error;
+            alert.style.display = 'block';
+            hideDeleteModal();
+        }
+    } catch (error) {
+        alert.className = 'alert alert-error';
+        alert.textContent = 'An error occurred. Please try again.';
+        alert.style.display = 'block';
+        hideDeleteModal();
+    }
+});
+
+// Close modal on outside click
+document.getElementById('delete-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'delete-modal') {
+        hideDeleteModal();
+    }
+});
+</script>
 {% endblock %}

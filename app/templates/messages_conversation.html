@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Conversation with {{ profile_name }} - QGig{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 2rem auto;">
+    <!-- Header -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <a href="{{ url_for('messages.inbox') }}" style="color: #6b7280; text-decoration: none; margin-right: 1rem;">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; color: white; margin-right: 1rem;">
+                    {{ profile_name[0].upper() }}
+                </div>
+                <div>
+                    <h2 style="font-size: 1.25rem; font-weight: 600; color: #111827; margin: 0;">{{ profile_name }}</h2>
+                    <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">{{ other_user.email }}</p>
+                </div>
+            </div>
+            
+            {% if related_job %}
+            <a href="{{ url_for('web.gig_detail', gig_id=related_job.id) }}" class="btn btn-outline btn-sm">
+                <i class="fas fa-briefcase"></i> View Gig
+            </a>
+            {% endif %}
+        </div>
+        
+        {% if related_job %}
+        <div style="margin-top: 1rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border-left: 3px solid var(--primary-color);">
+            <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">
+                <strong>Regarding:</strong> {{ related_job.title }}
+            </p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Messages -->
+    <div id="messagesContainer" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 1rem; max-height: 500px; overflow-y: auto;">
+        {% if messages %}
+            {% for message in messages %}
+            <div style="display: flex; {% if message.sender_id == session.user_id %}justify-content: flex-end;{% else %}justify-content: flex-start;{% endif %} margin-bottom: 1rem;">
+                <div style="max-width: 70%; {% if message.sender_id == session.user_id %}background: var(--primary-color); color: white;{% else %}background: #f3f4f6; color: #111827;{% endif %} padding: 1rem; border-radius: 12px; {% if message.sender_id == session.user_id %}border-bottom-right-radius: 4px;{% else %}border-bottom-left-radius: 4px;{% endif %}">
+                    {% if message.subject %}
+                    <p style="font-weight: 600; margin: 0 0 0.5rem 0; font-size: 0.875rem; {% if message.sender_id == session.user_id %}opacity: 0.9;{% else %}color: #6b7280;{% endif %}">
+                        {{ message.subject }}
+                    </p>
+                    {% endif %}
+                    
+                    <p style="margin: 0; white-space: pre-wrap; word-wrap: break-word;">{{ message.content }}</p>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; font-size: 0.75rem; {% if message.sender_id == session.user_id %}opacity: 0.8;{% else %}color: #9ca3af;{% endif %}">
+                        <span>{{ message.created_at.strftime('%I:%M %p') }}</span>
+                        {% if message.sender_id == session.user_id %}
+                        <span>
+                            {% if message.is_read %}
+                            <i class="fas fa-check-double"></i> Read
+                            {% else %}
+                            <i class="fas fa-check"></i> Sent
+                            {% endif %}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: #9ca3af;">
+            <i class="fas fa-comments" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+            <p>No messages yet. Start the conversation!</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Message Input -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <form id="messageForm" onsubmit="sendMessage(event)">
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <textarea id="messageContent" 
+                          name="content"
+                          placeholder="Type your message..." 
+                          required
+                          style="width: 100%; min-height: 100px; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; font-family: inherit; font-size: 0.875rem; resize: vertical;"
+                          onkeydown="if(event.key === 'Enter' && event.ctrlKey) { sendMessage(event); }"></textarea>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.75rem; color: #9ca3af;">
+                        <i class="fas fa-info-circle"></i> Press Ctrl+Enter to send
+                    </span>
+                    <button type="submit" class="btn btn-primary" style="min-width: 120px;">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Auto-scroll to bottom on load
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('messagesContainer');
+    container.scrollTop = container.scrollHeight;
+});
+
+// Send message via AJAX
+async function sendMessage(event) {
+    event.preventDefault();
+    
+    const content = document.getElementById('messageContent').value.trim();
+    if (!content) return;
+    
+    const button = event.target.querySelector('button[type="submit"]');
+    const originalText = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    
+    try {
+        const response = await fetch('{{ url_for("messages.send_message") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                receiver_id: {{ other_user.id }},
+                content: content,
+                {% if related_job %}job_id: {{ related_job.id }},{% endif %}
+            })
+        });
+        
+        if (response.ok) {
+            // Clear input
+            document.getElementById('messageContent').value = '';
+            
+            // Reload page to show new message
+            window.location.reload();
+        } else {
+            const data = await response.json();
+            alert('Error sending message: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to send message. Please try again.');
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+// Listen for new messages via Socket.IO
+if (typeof socket !== 'undefined') {
+    socket.on('new_message', function(data) {
+        if (data.sender_id === {{ other_user.id }}) {
+            // Reload to show new message
+            window.location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

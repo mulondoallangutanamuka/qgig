@@ -1,0 +1,1155 @@
+{% extends "base.html" %}
+{% block title %}Help Center - QGig{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+    
+    .help-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .help-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .help-header p {
+        font-size: 1.125rem;
+        color: #6b7280;
+    }
+    
+    .search-box {
+        max-width: 600px;
+        margin: 0 auto 3rem;
+        position: relative;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 1rem 3rem 1rem 1.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .search-box input:focus {
+        outline: none;
+        border-color: #1e40af;
+    }
+    
+    .search-box i {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+        font-size: 1.25rem;
+    }
+    
+    .help-nav {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .help-nav h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .help-nav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+    
+    .help-nav-item {
+        padding: 0.75rem 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        transition: background 0.2s;
+    }
+    
+    .help-nav-item:hover {
+        background: #e5e7eb;
+    }
+    
+    .help-nav-item a {
+        color: #1e40af;
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .help-nav-item a:hover {
+        color: #1e3a8a;
+    }
+    
+    .help-article {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        scroll-margin-top: 100px;
+    }
+    
+    .help-article h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .help-article h2 i {
+        color: #1e40af;
+    }
+    
+    .help-article h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .help-article h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-top: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .article-content {
+        color: #374151;
+        line-height: 1.8;
+    }
+    
+    .article-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .article-content ul,
+    .article-content ol {
+        margin: 1rem 0;
+        padding-left: 2rem;
+    }
+    
+    .article-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .article-content strong {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    .article-content a {
+        color: #1e40af;
+        text-decoration: underline;
+    }
+    
+    .article-content a:hover {
+        color: #1e3a8a;
+    }
+    
+    .contact-section {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        color: white;
+        margin-top: 3rem;
+    }
+    
+    .contact-section h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-section p {
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .contact-methods {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .contact-method {
+        background: rgba(255,255,255,0.1);
+        padding: 1.5rem;
+        border-radius: 8px;
+        min-width: 200px;
+    }
+    
+    .contact-method i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .contact-method h4 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .contact-method p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <div class="help-header">
+        <h1>Help Center</h1>
+        <p>Comprehensive guides and tutorials for using QGig</p>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" placeholder="Search help articles..." id="helpSearch">
+        <i class="fas fa-search"></i>
+    </div>
+    
+    <!-- Quick Navigation -->
+    <div class="help-nav">
+        <h3>Quick Navigation</h3>
+        <div class="help-nav-grid">
+            <div class="help-nav-item"><a href="#create-account"><i class="fas fa-user-plus"></i> Create Account</a></div>
+            <div class="help-nav-item"><a href="#complete-profile"><i class="fas fa-id-card"></i> Complete Profile</a></div>
+            <div class="help-nav-item"><a href="#find-jobs"><i class="fas fa-search"></i> Find Jobs</a></div>
+            <div class="help-nav-item"><a href="#post-job"><i class="fas fa-plus-circle"></i> Post a Job</a></div>
+            <div class="help-nav-item"><a href="#send-messages"><i class="fas fa-paper-plane"></i> Send Messages</a></div>
+            <div class="help-nav-item"><a href="#change-password"><i class="fas fa-key"></i> Change Password</a></div>
+        </div>
+    </div>
+    
+    <!-- Getting Started -->
+    <div class="help-article" id="create-account">
+        <h2><i class="fas fa-user-plus"></i> How to Create an Account</h2>
+        <div class="article-content">
+            <p>Creating an account on QGig is quick and easy:</p>
+            <ol>
+                <li><strong>Visit Sign Up:</strong> Click "Sign Up" in the navigation bar</li>
+                <li><strong>Choose Account Type:</strong>
+                    <ul>
+                        <li><strong>Professional:</strong> For job seekers</li>
+                        <li><strong>Institution:</strong> For employers</li>
+                    </ul>
+                </li>
+                <li><strong>Enter Details:</strong> Email, password, and confirm password</li>
+                <li><strong>Accept Terms:</strong> Read and agree to Terms of Service</li>
+                <li><strong>Create Account:</strong> Complete registration</li>
+            </ol>
+            <p><strong>Tips:</strong> Use a professional email, create a strong password (8+ characters), and keep credentials secure.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="complete-profile">
+        <h2><i class="fas fa-id-card"></i> Completing Your Profile</h2>
+        <div class="article-content">
+            <h3>For Professionals:</h3>
+            <ul>
+                <li><strong>Personal Info:</strong> Full name, phone, location</li>
+                <li><strong>Professional Details:</strong> Category, specialization, skills</li>
+                <li><strong>Experience:</strong> Work history, education, certifications</li>
+                <li><strong>Documents:</strong> NIN, certificates, CV, profile picture</li>
+            </ul>
+            
+            <h3>For Institutions:</h3>
+            <ul>
+                <li><strong>Organization:</strong> Name, contact details, location</li>
+                <li><strong>Business Info:</strong> Type, description, industry</li>
+            </ul>
+            
+            <p><strong>Why Complete Your Profile:</strong> Increases visibility, builds trust, and improves job matching.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="verify-documents">
+        <h2><i class="fas fa-certificate"></i> Document Verification</h2>
+        <div class="article-content">
+            <h3>Required Documents:</h3>
+            <ul>
+                <li>National ID (NIN) - Mandatory</li>
+                <li>Professional certificates/licenses</li>
+                <li>CV/Resume</li>
+                <li>Profile picture</li>
+            </ul>
+            
+            <h3>Verification Process:</h3>
+            <ol>
+                <li><strong>Upload:</strong> Clear, readable documents (PDF, JPG, PNG, under 5MB)</li>
+                <li><strong>Review:</strong> Team reviews within 24-48 hours</li>
+                <li><strong>Status:</strong> Pending → Approved/Rejected</li>
+                <li><strong>Resubmit:</strong> If rejected, upload corrected documents</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="help-article" id="platform-overview">
+        <h2><i class="fas fa-map"></i> Platform Overview</h2>
+        <div class="article-content">
+            <h3>Key Features:</h3>
+            <ul>
+                <li><strong>Job Marketplace:</strong> Browse and apply for opportunities</li>
+                <li><strong>Messaging:</strong> Direct communication between users</li>
+                <li><strong>Verified Profiles:</strong> Document verification system</li>
+                <li><strong>Notifications:</strong> Real-time updates</li>
+                <li><strong>Ratings:</strong> Build reputation through reviews</li>
+            </ul>
+            
+            <h3>Main Sections:</h3>
+            <ul>
+                <li><strong>Dashboard:</strong> Activity overview</li>
+                <li><strong>Find Jobs/Professionals:</strong> Search listings</li>
+                <li><strong>Messages:</strong> Chat with other users</li>
+                <li><strong>Profile:</strong> Manage your information</li>
+                <li><strong>Settings:</strong> Account preferences</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- For Professionals -->
+    <div class="help-article" id="find-jobs">
+        <h2><i class="fas fa-search"></i> Finding and Applying for Jobs</h2>
+        <div class="article-content">
+            <h3>How to Find Jobs:</h3>
+            <ol>
+                <li>Navigate to "Find Jobs"</li>
+                <li>Browse available listings</li>
+                <li>Use filters: location, category, budget</li>
+                <li>Click job to view full details</li>
+            </ol>
+            
+            <h3>Applying:</h3>
+            <ol>
+                <li>Review job requirements</li>
+                <li>Click "Express Interest"</li>
+                <li>Wait for institution to review your profile</li>
+                <li>Get notified if accepted</li>
+                <li>Chat opens automatically upon acceptance</li>
+            </ol>
+            
+            <h3>Success Tips:</h3>
+            <ul>
+                <li>Complete your profile fully</li>
+                <li>Upload verified documents</li>
+                <li>Apply to matching jobs</li>
+                <li>Respond promptly to messages</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="optimize-profile">
+        <h2><i class="fas fa-star"></i> Optimizing Your Profile</h2>
+        <div class="article-content">
+            <h3>Profile Checklist:</h3>
+            <ul>
+                <li>Professional photo</li>
+                <li>Complete bio with detailed skills</li>
+                <li>Comprehensive experience section</li>
+                <li>All education and certifications listed</li>
+                <li>Verified documents uploaded</li>
+                <li>Current contact information</li>
+            </ul>
+            
+            <h3>What Employers Look For:</h3>
+            <ul>
+                <li>Verified credentials</li>
+                <li>Relevant experience</li>
+                <li>Professional presentation</li>
+                <li>Complete information</li>
+                <li>Positive ratings</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="upload-documents">
+        <h2><i class="fas fa-upload"></i> Uploading Documents</h2>
+        <div class="article-content">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Go to Profile → Documents section</li>
+                <li>Click "Upload Document"</li>
+                <li>Select document type</li>
+                <li>Choose file from device</li>
+                <li>Add details if required</li>
+                <li>Submit and wait for verification</li>
+            </ol>
+            
+            <h3>Requirements:</h3>
+            <ul>
+                <li><strong>Formats:</strong> PDF, JPG, PNG</li>
+                <li><strong>Size:</strong> Maximum 5MB</li>
+                <li><strong>Quality:</strong> Clear, readable, high resolution</li>
+            </ul>
+            
+            <h3>Troubleshooting:</h3>
+            <ul>
+                <li>Check file size is under 5MB</li>
+                <li>Verify format is supported</li>
+                <li>Ensure stable internet connection</li>
+                <li>Try different browser if issues persist</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="communicate">
+        <h2><i class="fas fa-comment-dots"></i> Communicating with Institutions</h2>
+        <div class="article-content">
+            <h3>Best Practices:</h3>
+            <ul>
+                <li><strong>Respond Promptly:</strong> Within 24 hours</li>
+                <li><strong>Be Professional:</strong> Proper grammar, respectful language</li>
+                <li><strong>Ask Questions:</strong> Clarify job details, payment, expectations</li>
+                <li><strong>Confirm Details:</strong> Start date, location, requirements</li>
+            </ul>
+            
+            <h3>What to Discuss:</h3>
+            <ul>
+                <li>Job responsibilities and scope</li>
+                <li>Payment terms and schedule</li>
+                <li>Work location and hours</li>
+                <li>Required materials/equipment</li>
+            </ul>
+            
+            <h3>Red Flags:</h3>
+            <ul>
+                <li>Requests for upfront payment</li>
+                <li>Vague job descriptions</li>
+                <li>Pressure to act immediately</li>
+                <li>Off-platform communication requests</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- For Institutions -->
+    <div class="help-article" id="post-job">
+        <h2><i class="fas fa-plus-circle"></i> How to Post a Job</h2>
+        <div class="article-content">
+            <h3>Creating a Job:</h3>
+            <ol>
+                <li>Go to Dashboard → "Post New Job"</li>
+                <li>Fill in details:
+                    <ul>
+                        <li>Job title (clear, descriptive)</li>
+                        <li>Category and specialization</li>
+                        <li>Detailed description</li>
+                        <li>Requirements and qualifications</li>
+                        <li>Budget in UGX</li>
+                        <li>Duration/deadline</li>
+                        <li>Work location</li>
+                    </ul>
+                </li>
+                <li>Review all information</li>
+                <li>Publish job</li>
+            </ol>
+            
+            <h3>Writing Effective Descriptions:</h3>
+            <ul>
+                <li>Be specific about needs</li>
+                <li>List all requirements</li>
+                <li>Set clear expectations</li>
+                <li>Include work hours, location, start date</li>
+                <li>Offer competitive compensation</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="review-applicants">
+        <h2><i class="fas fa-clipboard-check"></i> Reviewing Applicants</h2>
+        <div class="article-content">
+            <h3>Review Process:</h3>
+            <ol>
+                <li>Check notifications for new interests</li>
+                <li>View professional's full profile</li>
+                <li>Verify uploaded documents</li>
+                <li>Assess qualifications vs requirements</li>
+                <li>Review experience and education</li>
+                <li>Check ratings from previous jobs</li>
+            </ol>
+            
+            <h3>What to Look For:</h3>
+            <ul>
+                <li>Verified documents (approved status)</li>
+                <li>Relevant skills matching job</li>
+                <li>Appropriate experience level</li>
+                <li>Complete profile information</li>
+                <li>Professional presentation</li>
+                <li>Proximity to job location</li>
+            </ul>
+            
+            <h3>Making Decisions:</h3>
+            <ul>
+                <li><strong>Accept:</strong> If qualified - chat opens automatically</li>
+                <li><strong>Decline:</strong> If not a fit - professional notified</li>
+                <li><strong>Compare:</strong> Review multiple candidates</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="hire-professional">
+        <h2><i class="fas fa-handshake"></i> Hiring a Professional</h2>
+        <div class="article-content">
+            <h3>After Accepting Interest:</h3>
+            <ol>
+                <li>Chat opens automatically</li>
+                <li>Discuss job specifics</li>
+                <li>Confirm arrangements</li>
+                <li>Set start date</li>
+                <li>Share necessary information</li>
+            </ol>
+            
+            <h3>Important Discussions:</h3>
+            <ul>
+                <li><strong>Payment:</strong> Total amount, schedule, method (Mobile Money, bank, cash)</li>
+                <li><strong>Schedule:</strong> Start date/time, work hours, duration</li>
+                <li><strong>Logistics:</strong> Exact location, materials needed, on-site contact</li>
+            </ul>
+            
+            <h3>After Completion:</h3>
+            <ul>
+                <li>Verify work is satisfactory</li>
+                <li>Process payment as agreed</li>
+                <li>Leave rating and review</li>
+                <li>Close job posting</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="manage-jobs">
+        <h2><i class="fas fa-tasks"></i> Managing Job Postings</h2>
+        <div class="article-content">
+            <h3>Job Statuses:</h3>
+            <ul>
+                <li><strong>Open:</strong> Accepting applications</li>
+                <li><strong>Assigned:</strong> Professional accepted, work in progress</li>
+                <li><strong>Completed:</strong> Work finished</li>
+                <li><strong>Closed:</strong> No longer active</li>
+            </ul>
+            
+            <h3>Available Actions:</h3>
+            <ul>
+                <li>Edit job details (before assignment)</li>
+                <li>Close job (stop accepting applications)</li>
+                <li>Reopen closed job</li>
+                <li>View all applicants</li>
+                <li>Delete job permanently</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Account Management -->
+    <div class="help-article" id="change-password">
+        <h2><i class="fas fa-key"></i> Changing Your Password</h2>
+        <div class="article-content">
+            <h3>Steps:</h3>
+            <ol>
+                <li>Go to Settings</li>
+                <li>Find Security/Password section</li>
+                <li>Enter current password</li>
+                <li>Enter new password (8+ characters)</li>
+                <li>Confirm new password</li>
+                <li>Save changes</li>
+            </ol>
+            
+            <h3>Password Requirements:</h3>
+            <ul>
+                <li>Minimum 8 characters</li>
+                <li>Mix of uppercase and lowercase</li>
+                <li>Include numbers</li>
+                <li>Special characters recommended</li>
+            </ul>
+            
+            <h3>Forgot Password:</h3>
+            <ol>
+                <li>Click "Forgot Password" on login</li>
+                <li>Enter email address</li>
+                <li>Check email for reset link</li>
+                <li>Create new password</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="help-article" id="update-email">
+        <h2><i class="fas fa-envelope"></i> Updating Email</h2>
+        <div class="article-content">
+            <h3>How to Update:</h3>
+            <ol>
+                <li>Navigate to Settings</li>
+                <li>Find Email section</li>
+                <li>Enter new email address</li>
+                <li>Verify with current password</li>
+                <li>Save changes</li>
+                <li>Verify new email (check inbox)</li>
+            </ol>
+            
+            <p><strong>Note:</strong> Use a professional email you have access to. Keep it current for important notifications.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="notifications">
+        <h2><i class="fas fa-bell"></i> Managing Notifications</h2>
+        <div class="article-content">
+            <h3>Notification Types:</h3>
+            <ul>
+                <li>Job matches (new jobs for your profile)</li>
+                <li>Application updates</li>
+                <li>New messages</li>
+                <li>Interest acceptances</li>
+                <li>System announcements</li>
+            </ul>
+            
+            <h3>Channels:</h3>
+            <ul>
+                <li><strong>In-App:</strong> Bell icon in navigation</li>
+                <li><strong>Email:</strong> Sent to registered email</li>
+                <li><strong>Real-Time:</strong> Pop-ups when logged in</li>
+            </ul>
+            
+            <h3>Managing Preferences:</h3>
+            <p>Go to Settings → Notifications to toggle types on/off and adjust email frequency.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="delete-account">
+        <h2><i class="fas fa-user-times"></i> Deleting Account</h2>
+        <div class="article-content">
+            <p><strong>Warning:</strong> Account deletion is permanent and cannot be undone.</p>
+            
+            <h3>What Gets Deleted:</h3>
+            <ul>
+                <li>Profile and personal information</li>
+                <li>All uploaded documents</li>
+                <li>Job postings (institutions)</li>
+                <li>Application history</li>
+                <li>Messages and conversations</li>
+                <li>Ratings and reviews</li>
+            </ul>
+            
+            <h3>How to Delete:</h3>
+            <ol>
+                <li>Go to Settings</li>
+                <li>Find "Delete Account" (usually at bottom)</li>
+                <li>Read warning carefully</li>
+                <li>Enter password to verify</li>
+                <li>Confirm deletion</li>
+            </ol>
+            
+            <p><strong>Alternatives:</strong> Consider deactivating temporarily or adjusting privacy settings instead.</p>
+        </div>
+    </div>
+    
+    <!-- Messaging -->
+    <div class="help-article" id="send-messages">
+        <h2><i class="fas fa-paper-plane"></i> Sending Messages</h2>
+        <div class="article-content">
+            <h3>Accessing Messages:</h3>
+            <ul>
+                <li>Click "Messages" in navigation</li>
+                <li>View all conversations</li>
+                <li>Click conversation to open chat</li>
+            </ul>
+            
+            <h3>Sending:</h3>
+            <ol>
+                <li>Open conversation</li>
+                <li>Type message in text box</li>
+                <li>Press Enter or click Send</li>
+            </ol>
+            
+            <h3>Features:</h3>
+            <ul>
+                <li>Real-time delivery</li>
+                <li>Read receipts</li>
+                <li>Message history saved</li>
+                <li>File attachments (if needed)</li>
+            </ul>
+            
+            <h3>Tips:</h3>
+            <ul>
+                <li>Be clear and concise</li>
+                <li>Use proper grammar</li>
+                <li>Respond within 24 hours</li>
+                <li>Stay professional</li>
+                <li>Keep communication on platform</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="message-notifications">
+        <h2><i class="fas fa-comment-alt"></i> Message Notifications</h2>
+        <div class="article-content">
+            <h3>How You're Notified:</h3>
+            <ul>
+                <li>Badge number on Messages icon</li>
+                <li>Real-time pop-up when logged in</li>
+                <li>Email notification</li>
+                <li>Sound alert (if enabled)</li>
+            </ul>
+            
+            <p>Manage preferences in Settings → Notifications.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="professional-communication">
+        <h2><i class="fas fa-comments"></i> Professional Communication</h2>
+        <div class="article-content">
+            <h3>Best Practices:</h3>
+            <ul>
+                <li><strong>Be Respectful:</strong> Polite, professional language</li>
+                <li><strong>Be Clear:</strong> State points concisely</li>
+                <li><strong>Be Responsive:</strong> Reply within 24 hours</li>
+                <li><strong>Be Honest:</strong> Provide accurate information</li>
+            </ul>
+            
+            <h3>Avoid:</h3>
+            <ul>
+                <li>Offensive language</li>
+                <li>ALL CAPS (shouting)</li>
+                <li>Spam or irrelevant messages</li>
+                <li>Sharing personal info prematurely</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="report-issue">
+        <h2><i class="fas fa-flag"></i> Reporting Issues</h2>
+        <div class="article-content">
+            <h3>What to Report:</h3>
+            <ul>
+                <li>Harassment or abuse</li>
+                <li>Fraudulent activity</li>
+                <li>Inappropriate content</li>
+                <li>Spam</li>
+                <li>Terms of service violations</li>
+            </ul>
+            
+            <h3>How to Report:</h3>
+            <ul>
+                <li>Click report icon in chat/profile</li>
+                <li>Email support@qgig.ug</li>
+                <li>Provide details and evidence</li>
+            </ul>
+            
+            <p><strong>Your Safety:</strong> Reports are confidential. Reported users won't know who reported them.</p>
+        </div>
+    </div>
+    
+    <!-- Safety & Security -->
+    <div class="help-article" id="account-security">
+        <h2><i class="fas fa-lock"></i> Account Security</h2>
+        <div class="article-content">
+            <h3>Protecting Your Account:</h3>
+            <ul>
+                <li><strong>Strong Password:</strong> 8+ characters, mix of letters/numbers/symbols</li>
+                <li><strong>Keep Private:</strong> Never share password</li>
+                <li><strong>Secure Email:</strong> Use strong email password, enable 2FA</li>
+                <li><strong>Log Out:</strong> On shared devices</li>
+                <li><strong>Update Software:</strong> Keep browsers current</li>
+            </ul>
+            
+            <h3>If Compromised:</h3>
+            <ol>
+                <li>Change password immediately</li>
+                <li>Check account activity</li>
+                <li>Contact support</li>
+                <li>Review security settings</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="help-article" id="data-privacy">
+        <h2><i class="fas fa-user-shield"></i> Data Privacy</h2>
+        <div class="article-content">
+            <h3>What We Collect:</h3>
+            <ul>
+                <li>Account info (email, name, phone)</li>
+                <li>Profile details (skills, experience)</li>
+                <li>Documents (NIN, certificates, CV)</li>
+                <li>Messages and communications</li>
+                <li>Usage data</li>
+            </ul>
+            
+            <h3>How We Use It:</h3>
+            <ul>
+                <li>Provide platform services</li>
+                <li>Match professionals with jobs</li>
+                <li>Verify credentials</li>
+                <li>Facilitate communication</li>
+                <li>Improve user experience</li>
+            </ul>
+            
+            <p>Read our full <a href="{{ url_for('web.privacy') }}">Privacy Policy</a> for details.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="fraud-prevention">
+        <h2><i class="fas fa-exclamation-triangle"></i> Avoiding Scams</h2>
+        <div class="article-content">
+            <h3>Red Flags:</h3>
+            <ul>
+                <li>Requests for upfront payment</li>
+                <li>Too-good-to-be-true offers</li>
+                <li>Pressure to act immediately</li>
+                <li>Vague job descriptions</li>
+                <li>Off-platform communication requests</li>
+                <li>Requests for excessive personal info</li>
+            </ul>
+            
+            <h3>Protect Yourself:</h3>
+            <ul>
+                <li>Verify users through profiles/documents</li>
+                <li>Stay on platform for communication</li>
+                <li>Trust your instincts</li>
+                <li>Research institution names</li>
+                <li>Report suspicious activity</li>
+            </ul>
+            
+            <h3>If Scammed:</h3>
+            <ol>
+                <li>Stop communication</li>
+                <li>Report to QGig support</li>
+                <li>Report to police if money lost</li>
+                <li>Change passwords</li>
+            </ol>
+        </div>
+    </div>
+    
+    <div class="help-article" id="report-suspicious">
+        <h2><i class="fas fa-eye"></i> Report Suspicious Activity</h2>
+        <div class="article-content">
+            <h3>How to Report:</h3>
+            <ol>
+                <li>Use report button on profiles/messages</li>
+                <li>Email support@qgig.ug with:
+                    <ul>
+                        <li>User ID or profile link</li>
+                        <li>Description of activity</li>
+                        <li>Screenshots if available</li>
+                        <li>Date and time</li>
+                    </ul>
+                </li>
+            </ol>
+            
+            <p><strong>We investigate all reports and take appropriate action (warning, suspension, or ban).</strong></p>
+        </div>
+    </div>
+    
+    <!-- Troubleshooting -->
+    <div class="help-article" id="login-issues">
+        <h2><i class="fas fa-sign-in-alt"></i> Login Problems</h2>
+        <div class="article-content">
+            <h3>Can't Log In?</h3>
+            
+            <h4>Forgot Password:</h4>
+            <ul>
+                <li>Click "Forgot Password"</li>
+                <li>Enter email</li>
+                <li>Check email for reset link</li>
+            </ul>
+            
+            <h4>Incorrect Credentials:</h4>
+            <ul>
+                <li>Check for typos</li>
+                <li>Verify Caps Lock is off</li>
+                <li>Try copying/pasting password</li>
+            </ul>
+            
+            <h4>Account Locked:</h4>
+            <ul>
+                <li>Wait 15 minutes after multiple failed attempts</li>
+                <li>Use password reset if needed</li>
+            </ul>
+            
+            <h4>Still Having Issues:</h4>
+            <p>Contact support@qgig.ug with your email address.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="upload-problems">
+        <h2><i class="fas fa-exclamation-circle"></i> Document Upload Problems</h2>
+        <div class="article-content">
+            <h3>Common Issues:</h3>
+            
+            <h4>File Too Large:</h4>
+            <ul>
+                <li>Compress file to under 5MB</li>
+                <li>Use online compression tools</li>
+                <li>Reduce image resolution</li>
+            </ul>
+            
+            <h4>Wrong Format:</h4>
+            <ul>
+                <li>Convert to PDF, JPG, or PNG</li>
+                <li>Use online converters if needed</li>
+            </ul>
+            
+            <h4>Upload Fails:</h4>
+            <ul>
+                <li>Check internet connection</li>
+                <li>Try different browser</li>
+                <li>Clear browser cache</li>
+                <li>Disable browser extensions</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="browser-issues">
+        <h2><i class="fas fa-browser"></i> Browser Compatibility</h2>
+        <div class="article-content">
+            <h3>Recommended Browsers:</h3>
+            <ul>
+                <li>Google Chrome (latest version)</li>
+                <li>Mozilla Firefox (latest version)</li>
+                <li>Microsoft Edge (latest version)</li>
+                <li>Safari (latest version)</li>
+            </ul>
+            
+            <h3>If Having Issues:</h3>
+            <ul>
+                <li>Update browser to latest version</li>
+                <li>Clear cache and cookies</li>
+                <li>Disable ad blockers</li>
+                <li>Try incognito/private mode</li>
+                <li>Try different browser</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="mobile-access">
+        <h2><i class="fas fa-mobile-alt"></i> Mobile Access</h2>
+        <div class="article-content">
+            <h3>Using QGig on Mobile:</h3>
+            <p>QGig is fully responsive and works on mobile devices through your browser.</p>
+            
+            <h3>Best Experience:</h3>
+            <ul>
+                <li>Use Chrome or Safari on mobile</li>
+                <li>Ensure stable internet connection</li>
+                <li>Update browser regularly</li>
+                <li>Enable notifications in browser settings</li>
+            </ul>
+            
+            <h3>Mobile Tips:</h3>
+            <ul>
+                <li>Add QGig to home screen for quick access</li>
+                <li>Use landscape mode for better viewing</li>
+                <li>Ensure sufficient storage for uploads</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Payments -->
+    <div class="help-article" id="payment-methods">
+        <h2><i class="fas fa-credit-card"></i> Payment Methods</h2>
+        <div class="article-content">
+            <h3>Available Methods:</h3>
+            <ul>
+                <li><strong>Mobile Money:</strong> MTN, Airtel (most common in Uganda)</li>
+                <li><strong>Bank Transfer:</strong> Direct bank-to-bank</li>
+                <li><strong>Cash:</strong> In-person payment</li>
+            </ul>
+            
+            <p><strong>Note:</strong> Payment arrangements are made directly between professionals and institutions. QGig facilitates communication but doesn't process payments.</p>
+            
+            <h3>Best Practices:</h3>
+            <ul>
+                <li>Agree on payment terms before starting work</li>
+                <li>Use traceable payment methods</li>
+                <li>Get written confirmation</li>
+                <li>Keep payment records</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="help-article" id="service-fees">
+        <h2><i class="fas fa-receipt"></i> Service Fees</h2>
+        <div class="article-content">
+            <h3>QGig Fees:</h3>
+            <ul>
+                <li><strong>Registration:</strong> Free for all users</li>
+                <li><strong>Browsing:</strong> Free to browse jobs/professionals</li>
+                <li><strong>Service Fee:</strong> Small fee on successful job completion</li>
+            </ul>
+            
+            <p>Specific fee structures will be communicated clearly before any charges apply.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="payment-disputes">
+        <h2><i class="fas fa-balance-scale"></i> Payment Disputes</h2>
+        <div class="article-content">
+            <h3>If Payment Issues Arise:</h3>
+            <ol>
+                <li><strong>Communicate:</strong> Try to resolve directly with other party</li>
+                <li><strong>Document:</strong> Keep records of agreements and communications</li>
+                <li><strong>Contact Support:</strong> Email support@qgig.ug if unresolved</li>
+                <li><strong>Provide Evidence:</strong> Share relevant messages and agreements</li>
+            </ol>
+            
+            <p><strong>Prevention:</strong> Always agree on payment terms in writing before starting work.</p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="invoices">
+        <h2><i class="fas fa-file-invoice"></i> Invoices and Receipts</h2>
+        <div class="article-content">
+            <h3>Getting Receipts:</h3>
+            <p>For any QGig service fees charged, receipts will be sent to your registered email.</p>
+            
+            <h3>Between Users:</h3>
+            <p>For payments between professionals and institutions, we recommend:</p>
+            <ul>
+                <li>Request written receipt from payer</li>
+                <li>Include: date, amount, service description, names</li>
+                <li>Keep copies for your records</li>
+                <li>Use Mobile Money transaction records</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Policies -->
+    <div class="help-article" id="community-guidelines">
+        <h2><i class="fas fa-users"></i> Community Guidelines</h2>
+        <div class="article-content">
+            <h3>Our Community Standards:</h3>
+            <ul>
+                <li><strong>Respect:</strong> Treat all users with courtesy and professionalism</li>
+                <li><strong>Honesty:</strong> Provide accurate information in profiles and communications</li>
+                <li><strong>Safety:</strong> Report suspicious activity and protect your account</li>
+                <li><strong>Fairness:</strong> Honor commitments and agreements</li>
+                <li><strong>Compliance:</strong> Follow all platform rules and Ugandan laws</li>
+            </ul>
+            
+            <h3>Prohibited Behavior:</h3>
+            <ul>
+                <li>Harassment, discrimination, or hate speech</li>
+                <li>Fraudulent activity or scams</li>
+                <li>Spam or unsolicited advertising</li>
+                <li>Impersonation or fake profiles</li>
+                <li>Sharing inappropriate content</li>
+            </ul>
+            
+            <p><strong>Violations may result in warnings, suspension, or permanent ban.</strong></p>
+        </div>
+    </div>
+    
+    <div class="help-article" id="acceptable-use">
+        <h2><i class="fas fa-check-circle"></i> Acceptable Use Policy</h2>
+        <div class="article-content">
+            <h3>Acceptable Use:</h3>
+            <ul>
+                <li>Creating legitimate professional profiles</li>
+                <li>Posting genuine job opportunities</li>
+                <li>Professional communication</li>
+                <li>Honest reviews and ratings</li>
+                <li>Reporting violations</li>
+            </ul>
+            
+            <h3>Unacceptable Use:</h3>
+            <ul>
+                <li>Creating fake accounts</li>
+                <li>Posting fraudulent jobs</li>
+                <li>Harassing other users</li>
+                <li>Attempting to hack or exploit the platform</li>
+                <li>Scraping or copying content</li>
+                <li>Using platform for illegal activities</li>
+            </ul>
+            
+            <p>See full <a href="{{ url_for('web.terms') }}">Terms of Service</a> for complete details.</p>
+        </div>
+    </div>
+    
+    <!-- Contact Support -->
+    <div class="contact-section">
+        <h2>Still Need Help?</h2>
+        <p>Our support team is here to assist you</p>
+        
+        <div class="contact-methods">
+            <div class="contact-method">
+                <i class="fas fa-envelope"></i>
+                <h4>Email Support</h4>
+                <p>support@qgig.ug</p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Response within 24 hours</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-phone"></i>
+                <h4>Phone Support</h4>
+                <p>+256 700 000 000</p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Mon-Fri, 8AM-6PM EAT</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-question-circle"></i>
+                <h4>FAQ</h4>
+                <p><a href="{{ url_for('web.faq') }}" style="color: white; text-decoration: underline;">Visit FAQ Page</a></p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Quick answers to common questions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Search functionality
+document.getElementById('helpSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const articles = document.querySelectorAll('.help-article');
+    
+    articles.forEach(article => {
+        const text = article.textContent.toLowerCase();
+        article.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Smooth scroll to article if hash is present
+if (window.location.hash) {
+    setTimeout(() => {
+        const element = document.querySelector(window.location.hash);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+}
+
+// Update hash on scroll
+const articles = document.querySelectorAll('.help-article');
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            history.replaceState(null, null, '#' + entry.target.id);
+        }
+    });
+}, { threshold: 0.5 });
+
+articles.forEach(article => observer.observe(article));
+</script>
+{% endblock %}

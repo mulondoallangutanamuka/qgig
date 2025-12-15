@@ -170,8 +170,16 @@
             </div>
             {% endif %}
             
-            {% if current_user %}
-            <!-- Messaging removed - use interest workflow instead -->
+            {% if current_user and current_user.role.value == 'professional' %}
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-body text-center">
+                    <h4 style="margin-bottom: 1rem;"><i class="fas fa-envelope"></i> Contact Institution</h4>
+                    <p style="color: var(--gray-600); margin-bottom: 1rem;">Have questions about this gig? Send a message to the institution.</p>
+                    <a href="{{ url_for('messages.compose', receiver_id=gig.institution.user_id, job_id=gig.id) }}" class="btn btn-primary btn-block">
+                        <i class="fas fa-paper-plane"></i> Send Message
+                    </a>
+                </div>
+            </div>
             {% endif %}
         </div>
     </div>

@@ -200,3 +200,22 @@ def send_acceptance_notification(professional_user_id, notification_data):
 def send_rejection_notification(professional_user_id, notification_data):
     """Send real-time notification when institution rejects interest"""
     emit_notification_to_user(professional_user_id, 'interest_rejected', notification_data)
+
+def send_message_notification(receiver_user_id, message_data):
+    """Send real-time notification when a new message is received"""
+    if not _socketio:
+        logger.warning("SocketIO not initialized, cannot send message notification")
+        return
+    
+    room = f'user_{receiver_user_id}'
+    logger.info(f"=== Sending Message Notification ===")
+    logger.info(f"Target room: {room}")
+    logger.info(f"Data: {message_data}")
+    
+    try:
+        _socketio.emit('new_message', message_data, room=room, namespace='/')
+        logger.info(f"✓ Message notification sent to {room}")
+        print(f"✓ Socket.IO: Sent new_message to {room}")
+    except Exception as e:
+        logger.error(f"Failed to send message notification to {room}: {e}", exc_info=True)
+        print(f"✗ Socket.IO: Failed to send message to {room}: {e}")

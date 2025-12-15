@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Compose Message - QGig{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 2rem auto;">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('messages.inbox') }}" style="color: #6b7280; text-decoration: none; font-size: 0.875rem;">
+            <i class="fas fa-arrow-left"></i> Back to Inbox
+        </a>
+        <h1 style="font-size: 2rem; font-weight: 700; margin-top: 0.5rem;">
+            <i class="fas fa-pen"></i> Compose Message
+        </h1>
+    </div>
+    
+    <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <form action="{{ url_for('messages.send_message') }}" method="POST">
+            <div style="margin-bottom: 1.5rem;">
+                <label for="receiver_id" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    To: <span style="color: #ef4444;">*</span>
+                </label>
+                {% if receiver %}
+                <input type="hidden" name="receiver_id" value="{{ receiver.id }}">
+                <div style="padding: 0.75rem; background: #f3f4f6; border-radius: 8px; color: #111827;">
+                    {{ receiver.email }}
+                </div>
+                {% else %}
+                <input type="number" 
+                       id="receiver_id" 
+                       name="receiver_id" 
+                       required
+                       placeholder="Enter user ID"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem;">
+                <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">
+                    Enter the user ID of the person you want to message
+                </p>
+                {% endif %}
+            </div>
+            
+            {% if job %}
+            <input type="hidden" name="job_id" value="{{ job.id }}">
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 3px solid var(--primary-color);">
+                <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">
+                    <strong>Regarding Gig:</strong> {{ job.title }}
+                </p>
+            </div>
+            {% endif %}
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="subject" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    Subject (Optional)
+                </label>
+                <input type="text" 
+                       id="subject" 
+                       name="subject" 
+                       placeholder="Message subject"
+                       style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem;">
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="content" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #374151;">
+                    Message <span style="color: #ef4444;">*</span>
+                </label>
+                <textarea id="content" 
+                          name="content" 
+                          required
+                          rows="8"
+                          placeholder="Type your message here..."
+                          style="width: 100%; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 0.875rem; font-family: inherit; resize: vertical;"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <a href="{{ url_for('messages.inbox') }}" class="btn btn-outline">
+                    Cancel
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send Message
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

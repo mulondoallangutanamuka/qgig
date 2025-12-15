@@ -1,0 +1,376 @@
+{% extends "base.html" %}
+{% block title %}Help Center - QGig{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+    
+    .help-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .help-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .help-header p {
+        font-size: 1.125rem;
+        color: #6b7280;
+    }
+    
+    .search-box {
+        max-width: 600px;
+        margin: 0 auto 3rem;
+        position: relative;
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 1rem 3rem 1rem 1.5rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        font-size: 1rem;
+        transition: border-color 0.2s;
+    }
+    
+    .search-box input:focus {
+        outline: none;
+        border-color: #1e40af;
+    }
+    
+    .search-box i {
+        position: absolute;
+        right: 1.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+        font-size: 1.25rem;
+    }
+    
+    .help-categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .help-category {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .help-category:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .category-icon {
+        width: 60px;
+        height: 60px;
+        background: #dbeafe;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .category-icon i {
+        font-size: 1.75rem;
+        color: #1e40af;
+    }
+    
+    .help-category h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .help-category p {
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+    
+    .help-category ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .help-category li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .help-category li:last-child {
+        border-bottom: none;
+    }
+    
+    .help-category a {
+        color: #1e40af;
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+    
+    .help-category a:hover {
+        color: #1e3a8a;
+    }
+    
+    .contact-section {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        color: white;
+        margin-top: 3rem;
+    }
+    
+    .contact-section h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .contact-section p {
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .contact-methods {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .contact-method {
+        background: rgba(255,255,255,0.1);
+        padding: 1.5rem;
+        border-radius: 8px;
+        min-width: 200px;
+    }
+    
+    .contact-method i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .contact-method h4 {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+    
+    .contact-method p {
+        margin: 0;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-container">
+    <div class="help-header">
+        <h1>Help Center</h1>
+        <p>Find guides, tutorials, and support resources</p>
+    </div>
+    
+    <div class="search-box">
+        <input type="text" placeholder="Search for help articles..." id="helpSearch">
+        <i class="fas fa-search"></i>
+    </div>
+    
+    <div class="help-categories">
+        <!-- Getting Started -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-rocket"></i>
+            </div>
+            <h3>Getting Started</h3>
+            <p>New to QGig? Start here to learn the basics</p>
+            <ul>
+                <li><a href="#create-account">How to create an account</a></li>
+                <li><a href="#complete-profile">Completing your profile</a></li>
+                <li><a href="#verify-documents">Document verification process</a></li>
+                <li><a href="#platform-overview">Platform overview</a></li>
+            </ul>
+        </div>
+        
+        <!-- For Professionals -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h3>For Professionals</h3>
+            <p>Guides for professionals seeking opportunities</p>
+            <ul>
+                <li><a href="#find-jobs">How to find and apply for jobs</a></li>
+                <li><a href="#optimize-profile">Optimizing your profile</a></li>
+                <li><a href="#upload-documents">Uploading certificates and documents</a></li>
+                <li><a href="#communicate">Communicating with institutions</a></li>
+            </ul>
+        </div>
+        
+        <!-- For Institutions -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3>For Institutions</h3>
+            <p>Resources for employers and organizations</p>
+            <ul>
+                <li><a href="#post-job">How to post a job</a></li>
+                <li><a href="#review-applicants">Reviewing applicants</a></li>
+                <li><a href="#hire-professional">Hiring a professional</a></li>
+                <li><a href="#manage-jobs">Managing your job postings</a></li>
+            </ul>
+        </div>
+        
+        <!-- Account Management -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-cog"></i>
+            </div>
+            <h3>Account Management</h3>
+            <p>Manage your account settings and preferences</p>
+            <ul>
+                <li><a href="#change-password">Changing your password</a></li>
+                <li><a href="#update-email">Updating your email</a></li>
+                <li><a href="#notifications">Managing notifications</a></li>
+                <li><a href="#delete-account">Deleting your account</a></li>
+            </ul>
+        </div>
+        
+        <!-- Messaging & Communication -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h3>Messaging & Communication</h3>
+            <p>Learn how to communicate effectively</p>
+            <ul>
+                <li><a href="#send-messages">Sending messages</a></li>
+                <li><a href="#message-notifications">Message notifications</a></li>
+                <li><a href="#professional-communication">Professional communication tips</a></li>
+                <li><a href="#report-issue">Reporting inappropriate behavior</a></li>
+            </ul>
+        </div>
+        
+        <!-- Safety & Security -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3>Safety & Security</h3>
+            <p>Keep your account and data secure</p>
+            <ul>
+                <li><a href="#account-security">Account security best practices</a></li>
+                <li><a href="#data-privacy">Understanding data privacy</a></li>
+                <li><a href="#fraud-prevention">Avoiding scams and fraud</a></li>
+                <li><a href="#report-suspicious">Reporting suspicious activity</a></li>
+            </ul>
+        </div>
+        
+        <!-- Troubleshooting -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-wrench"></i>
+            </div>
+            <h3>Troubleshooting</h3>
+            <p>Solutions to common technical issues</p>
+            <ul>
+                <li><a href="#login-issues">Can't log in?</a></li>
+                <li><a href="#upload-problems">Document upload problems</a></li>
+                <li><a href="#browser-issues">Browser compatibility</a></li>
+                <li><a href="#mobile-access">Accessing on mobile devices</a></li>
+            </ul>
+        </div>
+        
+        <!-- Payments & Fees -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <h3>Payments & Fees</h3>
+            <p>Understanding payments on QGig</p>
+            <ul>
+                <li><a href="#payment-methods">Payment methods</a></li>
+                <li><a href="#service-fees">Service fees explained</a></li>
+                <li><a href="#payment-disputes">Handling payment disputes</a></li>
+                <li><a href="#invoices">Getting invoices and receipts</a></li>
+            </ul>
+        </div>
+        
+        <!-- Policies & Guidelines -->
+        <div class="help-category">
+            <div class="category-icon">
+                <i class="fas fa-file-contract"></i>
+            </div>
+            <h3>Policies & Guidelines</h3>
+            <p>Important policies and community guidelines</p>
+            <ul>
+                <li><a href="{{ url_for('web.terms') }}">Terms of Service</a></li>
+                <li><a href="{{ url_for('web.privacy') }}">Privacy Policy</a></li>
+                <li><a href="#community-guidelines">Community guidelines</a></li>
+                <li><a href="#acceptable-use">Acceptable use policy</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Contact Support Section -->
+    <div class="contact-section">
+        <h2>Still Need Help?</h2>
+        <p>Our support team is here to assist you</p>
+        
+        <div class="contact-methods">
+            <div class="contact-method">
+                <i class="fas fa-envelope"></i>
+                <h4>Email Support</h4>
+                <p>support@qgig.ug</p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Response within 24 hours</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-phone"></i>
+                <h4>Phone Support</h4>
+                <p>+256 700 000 000</p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Mon-Fri, 8AM-6PM EAT</p>
+            </div>
+            
+            <div class="contact-method">
+                <i class="fas fa-question-circle"></i>
+                <h4>FAQ</h4>
+                <p><a href="{{ url_for('web.faq') }}" style="color: white; text-decoration: underline;">Visit FAQ Page</a></p>
+                <p style="margin-top: 0.5rem; opacity: 0.8;">Quick answers to common questions</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('helpSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const categories = document.querySelectorAll('.help-category');
+    
+    categories.forEach(category => {
+        const text = category.textContent.toLowerCase();
+        category.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

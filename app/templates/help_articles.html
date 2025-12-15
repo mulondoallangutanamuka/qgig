@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Help Articles - QGig{% endblock %}
+
+{% block extra_css %}
+<style>
+    .articles-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+    
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1e40af;
+        text-decoration: none;
+        font-weight: 600;
+        margin-bottom: 2rem;
+        transition: color 0.2s;
+    }
+    
+    .back-link:hover {
+        color: #1e3a8a;
+    }
+    
+    .help-article {
+        background: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        scroll-margin-top: 100px;
+    }
+    
+    .help-article h2 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+    
+    .help-article h2 i {
+        color: #1e40af;
+    }
+    
+    .help-article h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .help-article h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #374151;
+        margin-top: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .article-content {
+        color: #374151;
+        line-height: 1.8;
+    }
+    
+    .article-content p {
+        margin-bottom: 1rem;
+    }
+    
+    .article-content ul,
+    .article-content ol {
+        margin: 1rem 0;
+        padding-left: 2rem;
+    }
+    
+    .article-content li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .article-content strong {
+        color: #111827;
+        font-weight: 600;
+    }
+    
+    .article-content a {
+        color: #1e40af;
+        text-decoration: underline;
+    }
+    
+    .article-content a:hover {
+        color: #1e3a8a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="articles-container">
+    <a href="{{ url_for('web.help') }}" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Help Center
+    </a>
+    
+    <!-- All help articles with full content will be loaded here based on URL hash -->
+    <!-- This page serves as a comprehensive knowledge base -->
+    
+    <div class="help-article" id="create-account">
+        <h2><i class="fas fa-user-plus"></i> How to Create an Account</h2>
+        <div class="article-content">
+            <p>Creating an account on QGig is quick and easy. Follow these steps:</p>
+            <ol>
+                <li><strong>Visit the Sign Up Page:</strong> Click the "Sign Up" button in the top navigation bar</li>
+                <li><strong>Choose Your Account Type:</strong>
+                    <ul>
+                        <li><strong>Professional:</strong> If you're looking for job opportunities</li>
+                        <li><strong>Institution:</strong> If you're an employer looking to hire</li>
+                    </ul>
+                </li>
+                <li><strong>Fill in Your Details:</strong>
+                    <ul>
+                        <li>Email address (must be valid)</li>
+                        <li>Strong password (at least 8 characters)</li>
+                        <li>Confirm your password</li>
+                    </ul>
+                </li>
+                <li><strong>Agree to Terms:</strong> Read and accept our Terms of Service and Privacy Policy</li>
+                <li><strong>Click "Create Account":</strong> You'll be redirected to complete your profile</li>
+            </ol>
+            <p><strong>Tips:</strong></p>
+            <ul>
+                <li>Use a professional email address</li>
+                <li>Choose a strong, unique password</li>
+                <li>Keep your login credentials secure</li>
+            </ul>
+        </div>
+    </div>
+    
+    <p style="text-align: center; color: #6b7280; margin-top: 3rem;">
+        More articles coming soon. For immediate assistance, contact <a href="mailto:support@qgig.ug">support@qgig.ug</a>
+    </p>
+</div>
+
+<script>
+// Smooth scroll to article if hash is present
+if (window.location.hash) {
+    setTimeout(() => {
+        const element = document.querySelector(window.location.hash);
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
+}
+</script>
+{% endblock %}

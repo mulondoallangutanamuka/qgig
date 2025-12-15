@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Messages - QGig{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; margin: 2rem auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700;">
+            <i class="fas fa-envelope"></i> Messages
+            {% if total_unread > 0 %}
+            <span style="background: #ef4444; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; margin-left: 0.5rem;">
+                {{ total_unread }}
+            </span>
+            {% endif %}
+        </h1>
+        <a href="{{ url_for('messages.compose') }}" class="btn btn-primary">
+            <i class="fas fa-pen"></i> New Message
+        </a>
+    </div>
+    
+    {% if conversations %}
+    <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        {% for conv in conversations %}
+        <a href="{{ url_for('messages.conversation', other_user_id=conv.other_user.id) }}" 
+           style="display: flex; align-items: center; padding: 1.5rem; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: inherit; transition: background 0.2s;"
+           onmouseover="this.style.background='#f9fafb'" 
+           onmouseout="this.style.background='white'">
+            
+            <!-- Avatar -->
+            <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; color: white; margin-right: 1rem; flex-shrink: 0;">
+                {{ conv.profile_name[0].upper() }}
+            </div>
+            
+            <!-- Message Info -->
+            <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <div>
+                        <h3 style="font-size: 1.125rem; font-weight: 600; color: #111827; margin-bottom: 0.25rem;">
+                            {{ conv.profile_name }}
+                        </h3>
+                        {% if conv.job %}
+                        <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">
+                            <i class="fas fa-briefcase"></i> Re: {{ conv.job.title }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.875rem; color: #6b7280;">
+                            {{ conv.last_message.created_at.strftime('%b %d, %I:%M %p') }}
+                        </span>
+                        {% if conv.unread_count > 0 %}
+                        <span style="display: block; margin-top: 0.25rem; background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                            {{ conv.unread_count }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <p style="color: {% if conv.unread_count > 0 %}#111827{% else %}#6b7280{% endif %}; 
+                          font-size: 0.875rem; 
+                          margin: 0; 
+                          overflow: hidden; 
+                          text-overflow: ellipsis; 
+                          white-space: nowrap;
+                          font-weight: {% if conv.unread_count > 0 %}600{% else %}400{% endif %};">
+                    {% if conv.last_message.sender_id == session.user_id %}
+                    <i class="fas fa-reply" style="color: #6b7280; margin-right: 0.25rem;"></i>
+                    {% endif %}
+                    {{ conv.last_message.content[:100] }}{% if conv.last_message.content|length > 100 %}...{% endif %}
+                </p>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="background: white; border-radius: 12px; padding: 4rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <i class="fas fa-inbox" style="font-size: 4rem; color: #d1d5db; margin-bottom: 1rem;"></i>
+        <h3 style="font-size: 1.5rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">No messages yet</h3>
+        <p style="color: #6b7280; margin-bottom: 2rem;">Start a conversation with professionals or institutions</p>
+        <a href="{{ url_for('messages.compose') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-pen"></i> Send Your First Message
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

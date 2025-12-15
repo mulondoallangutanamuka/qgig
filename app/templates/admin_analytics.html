@@ -1,48 +1,268 @@
 {% extends "base.html" %}
 {% block title %}System Analytics - Admin Dashboard{% endblock %}
 
+{% block extra_css %}
+<style>
+    .analytics-container {
+        display: flex;
+        min-height: calc(100vh - 80px);
+        background: #f9fafb;
+    }
+    
+    .analytics-sidebar {
+        width: 260px;
+        background: white;
+        border-right: 1px solid #e5e7eb;
+        position: fixed;
+        height: calc(100vh - 80px);
+        overflow-y: auto;
+    }
+    
+    .analytics-main {
+        margin-left: 260px;
+        flex: 1;
+        padding: 2rem;
+        overflow-y: auto;
+    }
+    
+    .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #6b7280;
+        transition: all 0.2s;
+        font-weight: 500;
+    }
+    
+    .nav-item:hover {
+        background: #f3f4f6;
+        color: #111827;
+    }
+    
+    .nav-item.active {
+        background: #dbeafe;
+        color: #1e40af;
+        font-weight: 600;
+    }
+    
+    .nav-item i {
+        width: 20px;
+        margin-right: 12px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+    
+    .stat-card.users::before { background: #10b981; }
+    .stat-card.jobs::before { background: #3b82f6; }
+    .stat-card.interests::before { background: #f59e0b; }
+    .stat-card.documents::before { background: #8b5cf6; }
+    
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    
+    .stat-icon.users { background: #d1fae5; color: #065f46; }
+    .stat-icon.jobs { background: #dbeafe; color: #1e40af; }
+    .stat-icon.interests { background: #fef3c7; color: #92400e; }
+    .stat-icon.documents { background: #ede9fe; color: #5b21b6; }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .stat-change {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        margin-top: 0.5rem;
+    }
+    
+    .stat-change.positive {
+        background: #d1fae5;
+        color: #065f46;
+    }
+    
+    .stat-change.negative {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .chart-subtitle {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+    }
+    
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .insight-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .insight-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .insight-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    
+    .insight-title {
+        font-weight: 600;
+        color: #111827;
+    }
+    
+    .insight-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.25rem;
+    }
+    
+    .insight-description {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div style="display: flex; min-height: calc(100vh - 80px); background: #f9fafb;">
-    <!-- Admin Sidebar -->
-    <aside style="width: 260px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: calc(100vh - 80px); overflow-y: auto;">
+<div class="analytics-container">
+    <!-- Sidebar -->
+    <aside class="analytics-sidebar">
         <div style="padding: 2rem 1rem;">
             <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
                 <i class="fas fa-shield-alt"></i> System Admin
             </h2>
             
             <nav>
-                <a href="{{ url_for('web.admin_dashboard') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-home" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_dashboard') }}" class="nav-item">
+                    <i class="fas fa-home"></i>
                     <span>Dashboard</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_users') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-users" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_users') }}" class="nav-item">
+                    <i class="fas fa-users"></i>
                     <span>User Management</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_jobs') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-briefcase" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_jobs') }}" class="nav-item">
+                    <i class="fas fa-briefcase"></i>
                     <span>All Jobs</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_documents') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-file-alt" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_documents') }}" class="nav-item">
+                    <i class="fas fa-file-alt"></i>
                     <span>Documents</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_payments') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-credit-card" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_payments') }}" class="nav-item">
+                    <i class="fas fa-credit-card"></i>
                     <span>Payments</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_analytics') }}" class="nav-item active" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; background: #dbeafe; color: #1e40af; font-weight: 600; transition: all 0.2s;">
-                    <i class="fas fa-chart-line" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_analytics') }}" class="nav-item active">
+                    <i class="fas fa-chart-line"></i>
                     <span>Analytics</span>
                 </a>
                 
-                <a href="{{ url_for('web.admin_settings') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
-                    <i class="fas fa-cog" style="width: 20px; margin-right: 12px;"></i>
+                <a href="{{ url_for('web.admin_settings') }}" class="nav-item">
+                    <i class="fas fa-cog"></i>
                     <span>Settings</span>
                 </a>
             </nav>
@@ -50,52 +270,319 @@
     </aside>
     
     <!-- Main Content -->
-    <main style="margin-left: 260px; flex: 1; padding: 2rem; overflow-y: auto;">
-        <div>
-            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
-                System Analytics
+    <main class="analytics-main">
+        <div style="margin-bottom: 2rem;">
+            <h1 style="font-size: 2rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">
+                <i class="fas fa-chart-line"></i> System Analytics
             </h1>
-            <p style="color: #6b7280; margin-bottom: 2rem;">Platform-wide insights and trends</p>
-            
-            <!-- Coming Soon Message -->
-            <div style="background: white; border-radius: 12px; padding: 3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
-                <div style="width: 80px; height: 80px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem;">
-                    <i class="fas fa-chart-line" style="font-size: 2.5rem; color: #1e40af;"></i>
+            <p style="color: #6b7280;">Real-time platform insights and performance metrics</p>
+        </div>
+        
+        <!-- Key Metrics -->
+        <div class="stats-grid">
+            <div class="stat-card users">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ analytics.users.total }}</div>
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +{{ analytics.users.new_30d }} this month
+                        </div>
+                    </div>
+                    <div class="stat-icon users">
+                        <i class="fas fa-users"></i>
+                    </div>
                 </div>
-                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #111827;">
-                    Advanced Analytics Coming Soon
-                </h2>
-                <p style="color: #6b7280; max-width: 600px; margin: 0 auto 2rem;">
-                    We're building comprehensive analytics dashboards with detailed insights, charts, and reports. This section will include:
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 800px; margin: 0 auto;">
-                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
-                        <i class="fas fa-users" style="font-size: 2rem; color: #10b981; margin-bottom: 1rem;"></i>
-                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">User Growth</h3>
-                        <p style="font-size: 0.875rem; color: #6b7280;">Track user registration and engagement trends</p>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Professionals</span>
+                        <span style="font-weight: 600;">{{ analytics.users.professionals }}</span>
                     </div>
-                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
-                        <i class="fas fa-briefcase" style="font-size: 2rem; color: #1e40af; margin-bottom: 1rem;"></i>
-                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Job Metrics</h3>
-                        <p style="font-size: 0.875rem; color: #6b7280;">Analyze job posting and completion rates</p>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Institutions</span>
+                        <span style="font-weight: 600;">{{ analytics.users.institutions }}</span>
                     </div>
-                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
-                        <i class="fas fa-dollar-sign" style="font-size: 2rem; color: #f59e0b; margin-bottom: 1rem;"></i>
-                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Revenue Insights</h3>
-                        <p style="font-size: 0.875rem; color: #6b7280;">Monitor platform revenue and transactions</p>
+                </div>
+            </div>
+            
+            <div class="stat-card jobs">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ analytics.jobs.total }}</div>
+                        <div class="stat-label">Total Jobs</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            +{{ analytics.jobs.new_30d }} this month
+                        </div>
                     </div>
-                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
-                        <i class="fas fa-chart-bar" style="font-size: 2rem; color: #6366f1; margin-bottom: 1rem;"></i>
-                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Performance</h3>
-                        <p style="font-size: 0.875rem; color: #6b7280;">System performance and usage statistics</p>
+                    <div class="stat-icon jobs">
+                        <i class="fas fa-briefcase"></i>
                     </div>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Active</span>
+                        <span style="font-weight: 600; color: #10b981;">{{ analytics.jobs.active }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Completed</span>
+                        <span style="font-weight: 600;">{{ analytics.jobs.completed }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card interests">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ analytics.interests.total }}</div>
+                        <div class="stat-label">Total Interests</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i>
+                            Active engagement
+                        </div>
+                    </div>
+                    <div class="stat-icon interests">
+                        <i class="fas fa-hand-paper"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Pending</span>
+                        <span style="font-weight: 600; color: #f59e0b;">{{ analytics.interests.pending }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Accepted</span>
+                        <span style="font-weight: 600; color: #10b981;">{{ analytics.interests.accepted }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card documents">
+                <div class="stat-header">
+                    <div>
+                        <div class="stat-value">{{ analytics.documents.total }}</div>
+                        <div class="stat-label">Total Documents</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-check-circle"></i>
+                            {{ analytics.documents.verified }} verified
+                        </div>
+                    </div>
+                    <div class="stat-icon documents">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Verified</span>
+                        <span style="font-weight: 600; color: #10b981;">{{ analytics.documents.verified }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280; font-size: 0.875rem;">Pending</span>
+                        <span style="font-weight: 600; color: #f59e0b;">{{ analytics.documents.pending }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Growth Charts -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title">User Growth</div>
+                        <div class="chart-subtitle">New user registrations (Last 7 days)</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="userGrowthChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div>
+                        <div class="chart-title">Job Postings</div>
+                        <div class="chart-subtitle">New jobs posted (Last 7 days)</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="jobGrowthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Insights -->
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-header">
+                    <div class="insight-icon" style="background: #d1fae5; color: #065f46;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div class="insight-title">Active Users</div>
+                    </div>
+                </div>
+                <div class="insight-value">{{ analytics.users.active }}</div>
+                <div class="insight-description">
+                    {{ ((analytics.users.active / analytics.users.total * 100) | round(1)) }}% of total users are active
+                </div>
+            </div>
+            
+            <div class="insight-card">
+                <div class="insight-header">
+                    <div class="insight-icon" style="background: #dbeafe; color: #1e40af;">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div>
+                        <div class="insight-title">Acceptance Rate</div>
+                    </div>
+                </div>
+                <div class="insight-value">
+                    {% if analytics.interests.total > 0 %}
+                        {{ ((analytics.interests.accepted / analytics.interests.total * 100) | round(1)) }}%
+                    {% else %}
+                        0%
+                    {% endif %}
+                </div>
+                <div class="insight-description">
+                    {{ analytics.interests.accepted }} out of {{ analytics.interests.total }} interests accepted
+                </div>
+            </div>
+            
+            <div class="insight-card">
+                <div class="insight-header">
+                    <div class="insight-icon" style="background: #fef3c7; color: #92400e;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div>
+                        <div class="insight-title">Pending Reviews</div>
+                    </div>
+                </div>
+                <div class="insight-value">{{ analytics.documents.pending }}</div>
+                <div class="insight-description">
+                    Documents awaiting verification
                 </div>
             </div>
         </div>
     </main>
 </div>
 
-<style>
-.nav-item:hover { background: #f3f4f6; color: #111827; }
-</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// User Growth Chart
+const userGrowthCtx = document.getElementById('userGrowthChart').getContext('2d');
+const userGrowthChart = new Chart(userGrowthCtx, {
+    type: 'line',
+    data: {
+        labels: {{ analytics.daily_stats | map(attribute='date') | list | tojson }},
+        datasets: [{
+            label: 'New Users',
+            data: {{ analytics.daily_stats | map(attribute='users') | list | tojson }},
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            pointBackgroundColor: '#10b981',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: '#111827',
+                padding: 12,
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#e5e7eb',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0,
+                    color: '#6b7280'
+                },
+                grid: {
+                    color: '#f3f4f6'
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#6b7280'
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Job Growth Chart
+const jobGrowthCtx = document.getElementById('jobGrowthChart').getContext('2d');
+const jobGrowthChart = new Chart(jobGrowthCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ analytics.daily_stats | map(attribute='date') | list | tojson }},
+        datasets: [{
+            label: 'New Jobs',
+            data: {{ analytics.daily_stats | map(attribute='jobs') | list | tojson }},
+            backgroundColor: '#3b82f6',
+            borderColor: '#2563eb',
+            borderWidth: 2,
+            borderRadius: 8,
+            barThickness: 40
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                backgroundColor: '#111827',
+                padding: 12,
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#e5e7eb',
+                borderWidth: 1
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0,
+                    color: '#6b7280'
+                },
+                grid: {
+                    color: '#f3f4f6'
+                }
+            },
+            x: {
+                ticks: {
+                    color: '#6b7280'
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
 {% endblock %}

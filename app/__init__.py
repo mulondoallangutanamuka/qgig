@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_login import LoginManager
@@ -15,6 +15,7 @@ from app.routes.admin import admin_blueprint
 from app.routes.web import web_blueprint
 from app.routes.analytics import analytics_blueprint
 from app.routes.file_upload_routes import file_upload_blueprint
+from app.routes.messages import messages_blueprint
 # from app.routes.rating_routes import rating_routes_blueprint
 import os
 
@@ -26,7 +27,8 @@ def create_app():
     
     app = Flask(__name__, 
                 template_folder='templates',
-                static_folder='static')
+                static_folder='static',
+                static_url_path='/static')
     app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     CORS(app, supports_credentials=True)
     
@@ -69,6 +71,7 @@ def create_app():
     app.register_blueprint(admin_blueprint, url_prefix="/api/admin")
     app.register_blueprint(analytics_blueprint, url_prefix="/api/analytics")
     app.register_blueprint(file_upload_blueprint)
+    app.register_blueprint(messages_blueprint)
     # app.register_blueprint(rating_routes_blueprint)
 
     # Error handlers

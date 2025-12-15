@@ -3,7 +3,7 @@ Web routes for rendering Jinja templates
 Handles all page rendering and form submissions for the web UI
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
 from app.database import SessionLocal
 from app.models.user import User, UserRole
 from app.models.professional import Professional
@@ -14,6 +14,7 @@ from app.models.rating import Rating
 from app.models.document import Document, DocumentType, DocumentStatus
 from app.models.notification import Notification
 from app.models.job_interest import JobInterest, InterestStatus
+from app.models.message import Message
 from sqlalchemy import func, or_, desc, asc
 from functools import wraps
 import bcrypt
@@ -109,6 +110,11 @@ def inject_user():
     )
 
 # ===== Authentication Routes =====
+
+@web_blueprint.route('/test-chat')
+def test_chat():
+    """Test page for chat opening functionality"""
+    return send_from_directory('..', 'test_chat_opening.html')
 
 @web_blueprint.route('/')
 def home():
@@ -252,6 +258,8 @@ def browse_gigs():
         search = request.args.get('search', '')
         status = request.args.get('status', '')
         location = request.args.get('location', '')
+        job_type = request.args.get('job_type', '')
+        sector = request.args.get('sector', '')
         sort = request.args.get('sort', 'newest')
         urgent = request.args.get('urgent', '')
         page = int(request.args.get('page', 1))
@@ -272,6 +280,12 @@ def browse_gigs():
         
         if location:
             query = query.filter(Job.location == location)
+        
+        if job_type:
+            query = query.filter(Job.job_type == job_type)
+        
+        if sector:
+            query = query.filter(Job.sector == sector)
         
         if urgent:
             query = query.filter(Job.is_urgent == True)
@@ -534,7 +548,14 @@ def initiate_payment_web(gig_id):
             return jsonify({'error': 'Payment already completed for this gig'}), 400
         
         professional = db.query(Professional).filter(Professional.id == gig.assigned_professional_id).first()
+        if not professional:
+            return jsonify({'error': 'Professional not found'}), 404
+        
+        professional_user = db.query(User).filter(User.id == professional.user_id).first()
         user = db.query(User).filter(User.id == session['user_id']).first()
+        
+        # Use professional's phone number for payment
+        professional_phone = professional.phone_number or "0700000000"
         
         merchant_reference = f"QGIG-{uuid.uuid4().hex[:12].upper()}"
         
@@ -555,8 +576,8 @@ def initiate_payment_web(gig_id):
         try:
             response = pesapal.initiate_payment(
                 amount=gig.pay_amount,
-                email=user.email,
-                phone=institution.contact_phone or "0700000000",
+                email=professional_user.email,
+                phone=professional_phone,
                 merchant_reference=merchant_reference
             )
             
@@ -611,7 +632,16 @@ def retry_payment_web(gig_id):
         if not payment:
             return jsonify({'error': 'No pending payment found for this gig'}), 404
         
+        # Get professional details for payment
+        professional = db.query(Professional).filter(Professional.id == gig.assigned_professional_id).first()
+        if not professional:
+            return jsonify({'error': 'Professional not found'}), 404
+        
+        professional_user = db.query(User).filter(User.id == professional.user_id).first()
         user = db.query(User).filter(User.id == session['user_id']).first()
+        
+        # Use professional's phone number for payment
+        professional_phone = professional.phone_number or "0700000000"
         
         # Generate new merchant reference for retry
         merchant_reference = f"QGIG-{uuid.uuid4().hex[:12].upper()}"
@@ -622,8 +652,8 @@ def retry_payment_web(gig_id):
         try:
             response = pesapal.initiate_payment(
                 amount=gig.pay_amount,
-                email=user.email,
-                phone=institution.contact_phone or "0700000000",
+                email=professional_user.email,
+                phone=professional_phone,
                 merchant_reference=merchant_reference
             )
             
@@ -1701,7 +1731,192 @@ def reject_document(document_id):
 @web_blueprint.route('/settings')
 @login_required
 def settings():
-    return render_template('settings.html')
+    """User settings page with account management options"""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == session['user_id']).first()
+        
+        # Get role-specific profile
+        profile = None
+        if user.role == UserRole.PROFESSIONAL:
+            profile = db.query(Professional).filter(Professional.user_id == user.id).first()
+        elif user.role == UserRole.INSTITUTION:
+            profile = db.query(Institution).filter(Institution.user_id == user.id).first()
+        
+        return render_template('settings.html', user=user, profile=profile)
+    finally:
+        db.close()
+
+@web_blueprint.route('/settings/change-password', methods=['POST'])
+@login_required
+def change_password():
+    """Change user password"""
+    db = SessionLocal()
+    try:
+        data = request.get_json() if request.is_json else request.form
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+        
+        if not all([current_password, new_password, confirm_password]):
+            return jsonify({'error': 'All fields are required'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'error': 'New passwords do not match'}), 400
+        
+        if len(new_password) < 8:
+            return jsonify({'error': 'Password must be at least 8 characters long'}), 400
+        
+        # Get user and verify current password
+        user = db.query(User).filter(User.id == session['user_id']).first()
+        
+        if not bcrypt.checkpw(current_password.encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({'error': 'Current password is incorrect'}), 401
+        
+        # Hash and update new password
+        new_hash = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        user.password = new_hash
+        user.updated_at = datetime.utcnow()
+        
+        db.commit()
+        
+        return jsonify({'success': True, 'message': 'Password changed successfully'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+@web_blueprint.route('/settings/update-email', methods=['POST'])
+@login_required
+def update_email():
+    """Update user email address"""
+    db = SessionLocal()
+    try:
+        data = request.get_json() if request.is_json else request.form
+        new_email = data.get('new_email')
+        password = data.get('password')
+        
+        if not all([new_email, password]):
+            return jsonify({'error': 'Email and password are required'}), 400
+        
+        # Validate email format
+        import re
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, new_email):
+            return jsonify({'error': 'Invalid email format'}), 400
+        
+        # Check if email already exists
+        existing = db.query(User).filter(User.email == new_email).first()
+        if existing:
+            return jsonify({'error': 'Email already in use'}), 409
+        
+        # Verify password
+        user = db.query(User).filter(User.id == session['user_id']).first()
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({'error': 'Password is incorrect'}), 401
+        
+        # Update email
+        user.email = new_email
+        user.updated_at = datetime.utcnow()
+        
+        db.commit()
+        
+        return jsonify({'success': True, 'message': 'Email updated successfully'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+@web_blueprint.route('/settings/delete-account', methods=['POST'])
+@login_required
+def delete_account():
+    """Delete user account permanently"""
+    db = SessionLocal()
+    try:
+        data = request.get_json() if request.is_json else request.form
+        password = data.get('password')
+        confirmation = data.get('confirmation')
+        
+        if not password:
+            return jsonify({'error': 'Password is required'}), 400
+        
+        if confirmation != 'DELETE':
+            return jsonify({'error': 'Please type DELETE to confirm'}), 400
+        
+        # Verify password
+        user = db.query(User).filter(User.id == session['user_id']).first()
+        if not bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+            return jsonify({'error': 'Password is incorrect'}), 401
+        
+        # Delete related data based on role
+        if user.role == UserRole.PROFESSIONAL:
+            # Delete professional profile and related data
+            professional = db.query(Professional).filter(Professional.user_id == user.id).first()
+            if professional:
+                # Delete job interests
+                db.query(JobInterest).filter(JobInterest.professional_id == professional.id).delete()
+                # Delete professional profile
+                db.delete(professional)
+        
+        elif user.role == UserRole.INSTITUTION:
+            # Delete institution profile and related data
+            institution = db.query(Institution).filter(Institution.user_id == user.id).first()
+            if institution:
+                # Delete jobs posted by institution
+                jobs = db.query(Job).filter(Job.institution_id == institution.id).all()
+                for job in jobs:
+                    # Delete interests for each job
+                    db.query(JobInterest).filter(JobInterest.job_id == job.id).delete()
+                    db.delete(job)
+                # Delete institution profile
+                db.delete(institution)
+        
+        # Delete notifications
+        db.query(Notification).filter(Notification.user_id == user.id).delete()
+        
+        # Delete messages (sent and received)
+        db.query(Message).filter(
+            (Message.sender_id == user.id) | (Message.receiver_id == user.id)
+        ).delete()
+        
+        # Delete documents
+        db.query(Document).filter(Document.user_id == user.id).delete()
+        
+        # Finally delete user
+        db.delete(user)
+        db.commit()
+        
+        # Logout user
+        session.clear()
+        
+        return jsonify({'success': True, 'message': 'Account deleted successfully', 'redirect': url_for('web.home')})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+@web_blueprint.route('/settings/notification-preferences', methods=['POST'])
+@login_required
+def update_notification_preferences():
+    """Update notification preferences"""
+    db = SessionLocal()
+    try:
+        data = request.get_json() if request.is_json else request.form
+        
+        user = db.query(User).filter(User.id == session['user_id']).first()
+        
+        # Store preferences in user metadata (you may want to add a preferences column)
+        # For now, return success
+        
+        return jsonify({'success': True, 'message': 'Notification preferences updated'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
 
 # ===== Interest-Based Workflow Routes =====
 
@@ -1910,23 +2125,42 @@ def accept_interest(interest_id):
                 'message': declined_notification.message
             })
         
-        # Notify accepted professional
+        # Create automatic welcome message from institution to professional
+        from app.models.message import Message, MessageStatus
+        institution_user = db.query(User).filter(User.id == institution.user_id).first()
         accepted_user = db.query(User).filter(
             User.id == interest.professional.user_id
         ).first()
+        
+        welcome_message = Message(
+            sender_id=institution_user.id,
+            receiver_id=accepted_user.id,
+            job_id=job.id,
+            job_interest_id=interest.id,
+            subject=f"Congratulations! Your interest in '{job.title}' has been accepted",
+            content=f"Hello! We're pleased to inform you that your interest in the gig '{job.title}' has been accepted. "
+                    f"Please feel free to reach out if you have any questions about the gig details, schedule, or requirements. "
+                    f"We look forward to working with you!",
+            status=MessageStatus.SENT
+        )
+        db.add(welcome_message)
+        db.flush()
+        
+        # Notify accepted professional with chat link
         accepted_notification = Notification(
             user_id=accepted_user.id,
             title="Interest Accepted!",
-            message=f"Your interest in the gig '{job.title}' has been ACCEPTED.",
+            message=f"Your interest in the gig '{job.title}' has been ACCEPTED. A message from the institution is waiting for you.",
             job_interest_id=interest.id
         )
         db.add(accepted_notification)
         
         db.commit()
         db.refresh(accepted_notification)
+        db.refresh(welcome_message)
         
         # Send real-time notification to accepted professional
-        from app.sockets import send_acceptance_notification
+        from app.sockets import send_acceptance_notification, send_message_notification
         send_acceptance_notification(accepted_user.id, {
             'notification_id': accepted_notification.id,
             'institution_name': job.institution.institution_name,
@@ -1934,12 +2168,23 @@ def accept_interest(interest_id):
             'job_id': job.id,
             'decision': 'Accepted',
             'timestamp': accepted_notification.created_at.strftime('%b %d, %Y at %I:%M %p'),
-            'message': accepted_notification.message
+            'message': accepted_notification.message,
+            'chat_url': f'/messages/conversation/{institution_user.id}'
+        })
+        
+        # Send real-time message notification
+        send_message_notification(accepted_user.id, {
+            'message_id': welcome_message.id,
+            'sender_id': institution_user.id,
+            'content': welcome_message.content,
+            'created_at': welcome_message.created_at.isoformat(),
+            'job_id': job.id
         })
         
         return jsonify({
             'success': True,
-            'message': 'Interest accepted successfully'
+            'message': 'Interest accepted successfully',
+            'chat_url': f'/messages/conversation/{accepted_user.id}'
         })
     finally:
         db.close()
@@ -2421,27 +2666,27 @@ def about():
 
 @web_blueprint.route('/how-it-works')
 def how_it_works():
-    return render_template('static_page.html', title='How It Works', content='How QGig works...')
+    return render_template('how_it_works.html')
 
 @web_blueprint.route('/contact')
 def contact():
-    return render_template('static_page.html', title='Contact Us', content='Contact information...')
+    return render_template('contact.html')
 
 @web_blueprint.route('/faq')
 def faq():
-    return render_template('static_page.html', title='FAQ', content='Frequently asked questions...')
+    return render_template('faq.html')
 
 @web_blueprint.route('/terms')
 def terms():
-    return render_template('static_page.html', title='Terms of Service', content='Terms and conditions...')
+    return render_template('terms.html')
 
 @web_blueprint.route('/privacy')
 def privacy():
-    return render_template('static_page.html', title='Privacy Policy', content='Privacy policy...')
+    return render_template('privacy.html')
 
 @web_blueprint.route('/help')
 def help():
-    return render_template('static_page.html', title='Help Center', content='Help and support...')
+    return render_template('help_full.html')
 
 @web_blueprint.route('/notifications/<int:notification_id>/respond', methods=['POST'])
 @login_required
@@ -2594,12 +2839,19 @@ def respond_to_gig_interest(interest_id, action):
             import logging
             logging.error(f"Socket.IO emission failed: {socket_error}")
         
-        return jsonify({
+        # Build response
+        response_data = {
             'success': True,
             'message': f'Interest {decision} successfully',
             'decision': decision,
             'interest_id': interest_id
-        }), 200
+        }
+        
+        # Add chat_url if accepted
+        if decision == 'accepted':
+            response_data['chat_url'] = f'/messages/conversation/{professional_user_id}'
+        
+        return jsonify(response_data), 200
         
     except Exception as e:
         db.rollback()
@@ -2990,11 +3242,94 @@ def get_institution_metrics():
 @login_required
 @role_required('admin')
 def admin_users():
-    """Admin view all users"""
+    """Admin view all users with documents"""
     db = SessionLocal()
     try:
-        users = db.query(User).order_by(desc(User.created_at)).all()
-        return render_template('admin_users.html', users=users)
+        from sqlalchemy.orm import joinedload
+        
+        # Get all users with their documents
+        users = db.query(User).options(
+            joinedload(User.professional),
+            joinedload(User.institution)
+        ).order_by(desc(User.created_at)).all()
+        
+        # Get documents for each user
+        user_documents = {}
+        for user in users:
+            docs = db.query(Document).filter(Document.user_id == user.id).all()
+            user_documents[user.id] = docs
+        
+        return render_template('admin_users.html', users=users, user_documents=user_documents)
+    finally:
+        db.close()
+
+@web_blueprint.route('/admin/users/<int:user_id>/toggle-status', methods=['POST'])
+@login_required
+@role_required('admin')
+def toggle_user_status(user_id):
+    """Toggle user active status"""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        user.is_active = not user.is_active
+        db.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'User {"activated" if user.is_active else "deactivated"} successfully',
+            'is_active': user.is_active
+        })
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+@web_blueprint.route('/admin/users/<int:user_id>/delete', methods=['POST'])
+@login_required
+@role_required('admin')
+def delete_user_admin(user_id):
+    """Admin delete user"""
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Prevent deleting self
+        if user.id == session['user_id']:
+            return jsonify({'error': 'Cannot delete your own account'}), 400
+        
+        # Delete related data
+        if user.role == UserRole.PROFESSIONAL:
+            professional = db.query(Professional).filter(Professional.user_id == user.id).first()
+            if professional:
+                db.query(JobInterest).filter(JobInterest.professional_id == professional.id).delete()
+                db.delete(professional)
+        elif user.role == UserRole.INSTITUTION:
+            institution = db.query(Institution).filter(Institution.user_id == user.id).first()
+            if institution:
+                jobs = db.query(Job).filter(Job.institution_id == institution.id).all()
+                for job in jobs:
+                    db.query(JobInterest).filter(JobInterest.job_id == job.id).delete()
+                    db.delete(job)
+                db.delete(institution)
+        
+        # Delete notifications, messages, documents
+        db.query(Notification).filter(Notification.user_id == user.id).delete()
+        db.query(Message).filter((Message.sender_id == user.id) | (Message.receiver_id == user.id)).delete()
+        db.query(Document).filter(Document.user_id == user.id).delete()
+        
+        db.delete(user)
+        db.commit()
+        
+        return jsonify({'success': True, 'message': 'User deleted successfully'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
@@ -3002,11 +3337,52 @@ def admin_users():
 @login_required
 @role_required('admin')
 def admin_jobs():
-    """Admin view all jobs"""
+    """Admin view all jobs with full details"""
     db = SessionLocal()
     try:
-        jobs = db.query(Job).order_by(desc(Job.created_at)).all()
-        return render_template('admin_jobs.html', jobs=jobs)
+        from sqlalchemy.orm import joinedload
+        
+        jobs = db.query(Job).options(
+            joinedload(Job.institution),
+            joinedload(Job.assigned_professional)
+        ).order_by(desc(Job.created_at)).all()
+        
+        # Get interest counts for each job
+        job_stats = {}
+        for job in jobs:
+            interests = db.query(JobInterest).filter(JobInterest.job_id == job.id).all()
+            job_stats[job.id] = {
+                'total_interests': len(interests),
+                'pending': len([i for i in interests if i.status == InterestStatus.PENDING]),
+                'accepted': len([i for i in interests if i.status == InterestStatus.ACCEPTED]),
+                'declined': len([i for i in interests if i.status == InterestStatus.DECLINED])
+            }
+        
+        return render_template('admin_jobs.html', jobs=jobs, job_stats=job_stats)
+    finally:
+        db.close()
+
+@web_blueprint.route('/admin/jobs/<int:job_id>/delete', methods=['POST'])
+@login_required
+@role_required('admin')
+def delete_job_admin(job_id):
+    """Admin delete job"""
+    db = SessionLocal()
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        # Delete related interests
+        db.query(JobInterest).filter(JobInterest.job_id == job.id).delete()
+        
+        db.delete(job)
+        db.commit()
+        
+        return jsonify({'success': True, 'message': 'Job deleted successfully'})
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
@@ -3031,12 +3407,120 @@ def admin_payments():
 @login_required
 @role_required('admin')
 def admin_analytics():
-    """Admin system analytics"""
-    return render_template('admin_analytics.html')
+    """Admin system analytics with real data"""
+    db = SessionLocal()
+    try:
+        from sqlalchemy import func
+        from datetime import datetime, timedelta
+        
+        # User statistics
+        total_users = db.query(User).count()
+        professionals_count = db.query(User).filter(User.role == UserRole.PROFESSIONAL).count()
+        institutions_count = db.query(User).filter(User.role == UserRole.INSTITUTION).count()
+        active_users = db.query(User).filter(User.is_active == True).count()
+        
+        # Job statistics
+        total_jobs = db.query(Job).count()
+        active_jobs = db.query(Job).filter(Job.status == JobStatus.OPEN).count()
+        completed_jobs = db.query(Job).filter(Job.status == JobStatus.COMPLETED).count()
+        
+        # Interest statistics
+        total_interests = db.query(JobInterest).count()
+        pending_interests = db.query(JobInterest).filter(JobInterest.status == InterestStatus.PENDING).count()
+        accepted_interests = db.query(JobInterest).filter(JobInterest.status == InterestStatus.ACCEPTED).count()
+        
+        # Document statistics
+        total_documents = db.query(Document).count()
+        verified_documents = db.query(Document).filter(Document.status == DocumentStatus.APPROVED).count()
+        pending_documents = db.query(Document).filter(Document.status == DocumentStatus.PENDING).count()
+        
+        # Recent activity (last 30 days)
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        new_users_30d = db.query(User).filter(User.created_at >= thirty_days_ago).count()
+        new_jobs_30d = db.query(Job).filter(Job.created_at >= thirty_days_ago).count()
+        
+        # Growth data for charts (last 7 days)
+        daily_stats = []
+        for i in range(7):
+            day = datetime.utcnow() - timedelta(days=6-i)
+            day_start = day.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            
+            users_count = db.query(User).filter(
+                User.created_at >= day_start,
+                User.created_at < day_end
+            ).count()
+            
+            jobs_count = db.query(Job).filter(
+                Job.created_at >= day_start,
+                Job.created_at < day_end
+            ).count()
+            
+            daily_stats.append({
+                'date': day.strftime('%b %d'),
+                'users': users_count,
+                'jobs': jobs_count
+            })
+        
+        analytics = {
+            'users': {
+                'total': total_users,
+                'professionals': professionals_count,
+                'institutions': institutions_count,
+                'active': active_users,
+                'new_30d': new_users_30d
+            },
+            'jobs': {
+                'total': total_jobs,
+                'active': active_jobs,
+                'completed': completed_jobs,
+                'new_30d': new_jobs_30d
+            },
+            'interests': {
+                'total': total_interests,
+                'pending': pending_interests,
+                'accepted': accepted_interests
+            },
+            'documents': {
+                'total': total_documents,
+                'verified': verified_documents,
+                'pending': pending_documents
+            },
+            'daily_stats': daily_stats
+        }
+        
+        return render_template('admin_analytics.html', analytics=analytics)
+    finally:
+        db.close()
 
 @web_blueprint.route('/admin/settings')
 @login_required
 @role_required('admin')
 def admin_settings():
     """Admin system settings"""
-    return render_template('admin_settings.html')
+    db = SessionLocal()
+    try:
+        # Get system configuration
+        config = {
+            'platform_name': 'QGig',
+            'version': '1.0.0',
+            'maintenance_mode': False,
+            'allow_registrations': True,
+            'require_email_verification': False
+        }
+        
+        return render_template('admin_settings.html', config=config)
+    finally:
+        db.close()
+
+@web_blueprint.route('/admin/settings/update', methods=['POST'])
+@login_required
+@role_required('admin')
+def update_admin_settings():
+    """Update admin settings"""
+    data = request.get_json() if request.is_json else request.form
+    
+    # Here you would save settings to database or config file
+    # For now, just return success
+    
+    return jsonify({'success': True, 'message': 'Settings updated successfully'})

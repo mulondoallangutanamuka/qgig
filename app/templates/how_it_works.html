@@ -1,0 +1,450 @@
+{% extends "base.html" %}
+{% block title %}How It Works - QGig{% endblock %}
+
+{% block extra_css %}
+<style>
+    .how-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+    
+    .how-header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+    
+    .how-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .how-header p {
+        font-size: 1.25rem;
+        color: #6b7280;
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .user-types {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+    
+    .user-type-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        text-align: center;
+        transition: transform 0.2s;
+    }
+    
+    .user-type-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .user-type-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .user-type-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    .user-type-card h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .user-type-card p {
+        color: #6b7280;
+        line-height: 1.6;
+    }
+    
+    .steps-section {
+        margin-bottom: 4rem;
+    }
+    
+    .steps-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .steps-header h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    .steps-header p {
+        color: #6b7280;
+        font-size: 1.125rem;
+    }
+    
+    .steps-grid {
+        display: grid;
+        gap: 2rem;
+    }
+    
+    .step-item {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+    }
+    
+    .step-number {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: white;
+    }
+    
+    .step-content h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.75rem;
+    }
+    
+    .step-content p {
+        color: #6b7280;
+        line-height: 1.7;
+    }
+    
+    .features-section {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 3rem;
+        margin-bottom: 4rem;
+    }
+    
+    .features-section h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+    
+    .feature-item {
+        text-align: center;
+    }
+    
+    .feature-icon {
+        width: 60px;
+        height: 60px;
+        background: white;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .feature-icon i {
+        font-size: 1.75rem;
+        color: #1e40af;
+    }
+    
+    .feature-item h4 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    .feature-item p {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+    
+    .cta-section {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        border-radius: 12px;
+        padding: 3rem;
+        text-align: center;
+        color: white;
+    }
+    
+    .cta-section h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .cta-section p {
+        font-size: 1.125rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+    
+    .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .cta-button {
+        padding: 1rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s;
+        display: inline-block;
+    }
+    
+    .cta-button.primary {
+        background: white;
+        color: #1e40af;
+    }
+    
+    .cta-button.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .cta-button.secondary {
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 2px solid white;
+    }
+    
+    .cta-button.secondary:hover {
+        background: rgba(255,255,255,0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="how-container">
+    <div class="how-header">
+        <h1>How QGig Works</h1>
+        <p>Connecting skilled professionals with institutions across Uganda has never been easier</p>
+    </div>
+    
+    <!-- User Types -->
+    <div class="user-types">
+        <div class="user-type-card">
+            <div class="user-type-icon">
+                <i class="fas fa-user-tie"></i>
+            </div>
+            <h3>For Professionals</h3>
+            <p>Showcase your skills, find opportunities, and grow your career. Whether you're a teacher, nurse, plumber, or electrician, QGig connects you with institutions looking for your expertise.</p>
+        </div>
+        
+        <div class="user-type-card">
+            <div class="user-type-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h3>For Institutions</h3>
+            <p>Find qualified professionals quickly and efficiently. Post jobs, review verified candidates, and hire the right talent for your organization with confidence.</p>
+        </div>
+    </div>
+    
+    <!-- For Professionals Steps -->
+    <div class="steps-section">
+        <div class="steps-header">
+            <h2>For Professionals: Find Your Next Opportunity</h2>
+            <p>Follow these simple steps to get started</p>
+        </div>
+        
+        <div class="steps-grid">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Create Your Profile</h3>
+                    <p>Sign up and complete your professional profile. Add your skills, experience, education, and specialization. Upload your NIN, certificates, CV, and profile picture to build trust with potential employers.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Browse Job Opportunities</h3>
+                    <p>Explore available jobs posted by institutions across Uganda. Filter by location, category, budget, and requirements to find opportunities that match your skills and preferences.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Express Your Interest</h3>
+                    <p>Found a job you like? Click "Express Interest" to apply. Institutions will review your profile, skills, and uploaded documents to evaluate your qualifications.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Get Accepted & Start Chatting</h3>
+                    <p>When an institution accepts your interest, you'll receive a notification and the chat will automatically open. Discuss job details, negotiate terms, and finalize arrangements directly with the employer.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>Complete the Job</h3>
+                    <p>Work with the institution, deliver quality service, and build your reputation. After completion, receive ratings and reviews that enhance your profile for future opportunities.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- For Institutions Steps -->
+    <div class="steps-section">
+        <div class="steps-header">
+            <h2>For Institutions: Hire Quality Talent</h2>
+            <p>Post jobs and find the perfect professional</p>
+        </div>
+        
+        <div class="steps-grid">
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h3>Register Your Institution</h3>
+                    <p>Create an account with your institution details. Provide your organization name, contact information, location, and a brief description of your business or organization.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h3>Post a Job</h3>
+                    <p>Create detailed job postings with clear requirements, responsibilities, budget, and duration. Specify the skills and qualifications you're looking for to attract the right candidates.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h3>Review Applicants</h3>
+                    <p>Receive notifications when professionals express interest. Review their profiles, check their verified documents, read about their experience, and evaluate their qualifications.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h3>Accept & Communicate</h3>
+                    <p>Select the best candidate and accept their interest. A chat will automatically open, allowing you to discuss job details, clarify expectations, and finalize arrangements.</p>
+                </div>
+            </div>
+            
+            <div class="step-item">
+                <div class="step-number">5</div>
+                <div class="step-content">
+                    <h3>Work Together</h3>
+                    <p>Collaborate with the professional to complete the job. After completion, rate and review their performance to help other institutions make informed hiring decisions.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Features -->
+    <div class="features-section">
+        <h2>Why Choose QGig?</h2>
+        
+        <div class="features-grid">
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-check"></i>
+                </div>
+                <h4>Verified Professionals</h4>
+                <p>All professionals upload verified documents including NIN, certificates, and licenses</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h4>Direct Communication</h4>
+                <p>Built-in messaging system for secure, real-time communication between parties</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-bell"></i>
+                </div>
+                <h4>Instant Notifications</h4>
+                <p>Get notified immediately about new jobs, applications, and messages</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <h4>Uganda-Wide Coverage</h4>
+                <p>Connect with opportunities and talent across all regions of Uganda</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-star"></i>
+                </div>
+                <h4>Ratings & Reviews</h4>
+                <p>Build your reputation with ratings and reviews from completed jobs</p>
+            </div>
+            
+            <div class="feature-item">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h4>Secure Platform</h4>
+                <p>Your data is protected with industry-standard encryption and security measures</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Call to Action -->
+    <div class="cta-section">
+        <h2>Ready to Get Started?</h2>
+        <p>Join thousands of professionals and institutions already using QGig</p>
+        
+        <div class="cta-buttons">
+            <a href="{{ url_for('web.signup') }}" class="cta-button primary">
+                <i class="fas fa-user-plus"></i> Sign Up Now
+            </a>
+            <a href="{{ url_for('web.faq') }}" class="cta-button secondary">
+                <i class="fas fa-question-circle"></i> Learn More
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

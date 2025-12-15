@@ -1,0 +1,378 @@
+{% extends "base.html" %}
+{% block title %}Frequently Asked Questions - QGig{% endblock %}
+
+{% block extra_css %}
+<style>
+    .faq-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 3rem 1.5rem;
+    }
+    
+    .faq-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .faq-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .faq-header p {
+        font-size: 1.125rem;
+        color: #6b7280;
+    }
+    
+    .faq-section {
+        margin-bottom: 2rem;
+    }
+    
+    .faq-section h2 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e40af;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #dbeafe;
+    }
+    
+    .faq-item {
+        background: white;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .faq-question {
+        padding: 1.25rem 1.5rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background 0.2s;
+    }
+    
+    .faq-question:hover {
+        background: #f9fafb;
+    }
+    
+    .faq-question h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+        flex: 1;
+    }
+    
+    .faq-icon {
+        font-size: 1.25rem;
+        color: #1e40af;
+        transition: transform 0.3s;
+    }
+    
+    .faq-item.active .faq-icon {
+        transform: rotate(180deg);
+    }
+    
+    .faq-answer {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease-out;
+    }
+    
+    .faq-answer-content {
+        padding: 0 1.5rem 1.5rem 1.5rem;
+        color: #4b5563;
+        line-height: 1.7;
+    }
+    
+    .faq-answer ul {
+        margin: 0.5rem 0;
+        padding-left: 1.5rem;
+    }
+    
+    .faq-answer li {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="faq-container">
+    <div class="faq-header">
+        <h1>Frequently Asked Questions</h1>
+        <p>Find answers to common questions about QGig platform</p>
+    </div>
+    
+    <!-- General Questions -->
+    <div class="faq-section">
+        <h2>General Questions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>What is QGig?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    QGig is Uganda's premier platform connecting skilled professionals with institutions and businesses. Whether you're a professional looking for gigs or an institution seeking qualified talent, QGig makes the connection seamless and secure.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Who can use QGig?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    QGig is designed for two main user groups:
+                    <ul>
+                        <li><strong>Professionals:</strong> Skilled workers in both formal and informal sectors (teachers, nurses, plumbers, electricians, etc.)</li>
+                        <li><strong>Institutions:</strong> Businesses, hospitals, schools, hotels, and organizations looking to hire professionals</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Is QGig available throughout Uganda?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Yes! QGig operates across all regions of Uganda. Professionals and institutions from Kampala, Entebbe, Jinja, Mbarara, Gulu, and all other cities and towns can use our platform.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- For Professionals -->
+    <div class="faq-section">
+        <h2>For Professionals</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I register as a professional?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Registration is simple:
+                    <ul>
+                        <li>Click "Sign Up" and select "Professional"</li>
+                        <li>Fill in your personal details and create a password</li>
+                        <li>Complete your profile with skills, experience, and qualifications</li>
+                        <li>Upload required documents (NIN, certificates, CV)</li>
+                        <li>Start browsing and applying for jobs!</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>What documents do I need to upload?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Required documents include:
+                    <ul>
+                        <li>National Identification Number (NIN) card</li>
+                        <li>Professional certificates or licenses (if applicable)</li>
+                        <li>Curriculum Vitae (CV)</li>
+                        <li>Profile picture</li>
+                    </ul>
+                    These documents help institutions verify your credentials and build trust.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I apply for jobs?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Browse available jobs in the "Find Jobs" section, click on any job that interests you, and click "Express Interest". The institution will review your profile and documents, and if selected, they'll accept your interest and you can start chatting directly.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Is there a fee to use QGig as a professional?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Registration and browsing jobs is completely free. You only pay a small service fee when you successfully complete a job through the platform.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- For Institutions -->
+    <div class="faq-section">
+        <h2>For Institutions</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I post a job?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    After registering as an institution:
+                    <ul>
+                        <li>Go to your dashboard and click "Post New Job"</li>
+                        <li>Fill in job details (title, description, requirements, budget)</li>
+                        <li>Set the job duration and location</li>
+                        <li>Publish the job to start receiving applications</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I review applicants?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    When professionals express interest in your job, you'll receive notifications. You can view their profiles, check their documents, read their experience, and review their qualifications. Accept the best candidate to start working together.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How does payment work?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Payment terms are agreed upon between you and the professional. QGig facilitates secure communication and document verification but does not handle direct payments. You can arrange payment through Mobile Money, bank transfer, or cash as agreed.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Can I hire multiple professionals for one job?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Currently, each job posting is designed for one professional. If you need multiple workers, you can post separate jobs or contact our support team for bulk hiring assistance.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Account & Security -->
+    <div class="faq-section">
+        <h2>Account & Security</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I reset my password?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Click "Forgot Password" on the login page, enter your email address, and follow the instructions sent to your email to reset your password.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Is my personal information safe?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Yes! We take data security seriously. All personal information is encrypted and stored securely. We never share your data with third parties without your consent. Read our Privacy Policy for more details.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>Can I delete my account?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Yes, you can delete your account anytime from the Settings page. Please note that this action is permanent and will remove all your data from our system.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Technical Support -->
+    <div class="faq-section">
+        <h2>Technical Support</h2>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>I'm having trouble uploading documents. What should I do?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    Ensure your documents are in PDF, JPG, or PNG format and under 5MB in size. If problems persist, try using a different browser or contact our support team at support@qgig.ug.
+                </div>
+            </div>
+        </div>
+        
+        <div class="faq-item">
+            <div class="faq-question" onclick="toggleFaq(this)">
+                <h3>How do I contact support?</h3>
+                <i class="fas fa-chevron-down faq-icon"></i>
+            </div>
+            <div class="faq-answer">
+                <div class="faq-answer-content">
+                    You can reach our support team through:
+                    <ul>
+                        <li>Email: support@qgig.ug</li>
+                        <li>Phone: +256 700 000 000</li>
+                        <li>Visit our Help Center for more resources</li>
+                    </ul>
+                    We typically respond within 24 hours.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleFaq(element) {
+    const faqItem = element.parentElement;
+    const answer = faqItem.querySelector('.faq-answer');
+    const isActive = faqItem.classList.contains('active');
+    
+    // Close all other FAQs
+    document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+        item.querySelector('.faq-answer').style.maxHeight = null;
+    });
+    
+    // Toggle current FAQ
+    if (!isActive) {
+        faqItem.classList.add('active');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+    }
+}
+</script>
+{% endblock %}
