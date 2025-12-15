@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Rate Job - QGig{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px;">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem; text-align: center;">
+        <i class="fas fa-star"></i> Rate Your Experience
+    </h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">{{ gig.title }}</h3>
+        </div>
+        <div class="card-body">
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: var(--gray-100); border-radius: var(--border-radius);">
+                <p style="margin: 0; color: var(--gray-700);">
+                    <strong>Rating:</strong> 
+                    {% if is_professional %}
+                        {{ gig.institution.name }}
+                    {% else %}
+                        {{ gig.assigned_professional.name or gig.assigned_professional.user.full_name }}
+                    {% endif %}
+                </p>
+            </div>
+            
+            <form method="POST">
+                <div style="margin-bottom: 1.5rem;">
+                    <label class="form-label" style="font-weight: 600; margin-bottom: 1rem; display: block;">
+                        How would you rate this experience?
+                    </label>
+                    <div class="star-rating" style="font-size: 3rem; text-align: center; margin-bottom: 1rem;">
+                        <input type="radio" name="rating" value="5" id="star5" required>
+                        <label for="star5" title="5 stars">★</label>
+                        <input type="radio" name="rating" value="4" id="star4">
+                        <label for="star4" title="4 stars">★</label>
+                        <input type="radio" name="rating" value="3" id="star3">
+                        <label for="star3" title="3 stars">★</label>
+                        <input type="radio" name="rating" value="2" id="star2">
+                        <label for="star2" title="2 stars">★</label>
+                        <input type="radio" name="rating" value="1" id="star1">
+                        <label for="star1" title="1 star">★</label>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <label for="comment" class="form-label" style="font-weight: 600;">
+                        Comments (Optional)
+                    </label>
+                    <textarea 
+                        name="comment" 
+                        id="comment" 
+                        class="form-input" 
+                        rows="4" 
+                        placeholder="Share your experience..."
+                        style="width: 100%; padding: 0.75rem; border: 1px solid var(--gray-300); border-radius: var(--border-radius); font-family: inherit;"
+                    ></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary btn-lg" style="flex: 1;">
+                        <i class="fas fa-paper-plane"></i> Submit Rating
+                    </button>
+                    <a href="{{ url_for('web.my_assignments' if is_professional else 'web.my_gigs') }}" class="btn btn-outline btn-lg">
+                        <i class="fas fa-times"></i> Skip
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.star-rating {
+    direction: rtl;
+    display: inline-flex;
+    flex-direction: row-reverse;
+    justify-content: center;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+    margin: 0 0.25rem;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label,
+.star-rating input[type="radio"]:checked ~ label {
+    color: #fbbf24;
+}
+</style>
+{% endblock %}

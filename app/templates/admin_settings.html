@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}System Settings - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: calc(100vh - 80px); background: #f9fafb;">
+    <!-- Admin Sidebar -->
+    <aside style="width: 260px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: calc(100vh - 80px); overflow-y: auto;">
+        <div style="padding: 2rem 1rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
+                <i class="fas fa-shield-alt"></i> System Admin
+            </h2>
+            
+            <nav>
+                <a href="{{ url_for('web.admin_dashboard') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-home" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_users') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-users" style="width: 20px; margin-right: 12px;"></i>
+                    <span>User Management</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_jobs') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-briefcase" style="width: 20px; margin-right: 12px;"></i>
+                    <span>All Jobs</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_documents') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-file-alt" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Documents</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_payments') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-credit-card" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Payments</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_analytics') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-chart-line" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Analytics</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_settings') }}" class="nav-item active" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; background: #dbeafe; color: #1e40af; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-cog" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main style="margin-left: 260px; flex: 1; padding: 2rem; overflow-y: auto;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
+                System Settings
+            </h1>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Configure platform settings and preferences</p>
+            
+            <!-- Settings Sections -->
+            <div style="display: grid; gap: 1.5rem;">
+                <!-- Platform Configuration -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">
+                        <i class="fas fa-cog"></i> Platform Configuration
+                    </h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Platform Name</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">QGig - Quick Gig Platform</p>
+                                </div>
+                                <button style="padding: 0.5rem 1rem; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Maintenance Mode</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">Platform is currently active</p>
+                                </div>
+                                <label style="position: relative; display: inline-block; width: 60px; height: 34px;">
+                                    <input type="checkbox" style="opacity: 0; width: 0; height: 0;">
+                                    <span style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Email Settings -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">
+                        <i class="fas fa-envelope"></i> Email Settings
+                    </h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Email Notifications</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">Send email notifications to users</p>
+                                </div>
+                                <span style="padding: 4px 12px; background: #d1fae5; color: #065f46; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">ENABLED</span>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">SMTP Configuration</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">Configure email server settings</p>
+                                </div>
+                                <button style="padding: 0.5rem 1rem; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer;">Configure</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Security Settings -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">
+                        <i class="fas fa-shield-alt"></i> Security Settings
+                    </h2>
+                    <div style="display: grid; gap: 1rem;">
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Two-Factor Authentication</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">Require 2FA for admin accounts</p>
+                                </div>
+                                <span style="padding: 4px 12px; background: #fee2e2; color: #991b1b; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">DISABLED</span>
+                            </div>
+                        </div>
+                        
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h3 style="font-weight: 600; margin-bottom: 0.25rem;">Session Timeout</h3>
+                                    <p style="font-size: 0.875rem; color: #6b7280;">Auto logout after 30 minutes of inactivity</p>
+                                </div>
+                                <button style="padding: 0.5rem 1rem; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer;">Edit</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- System Information -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">
+                        <i class="fas fa-info-circle"></i> System Information
+                    </h2>
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280;">Platform Version</span>
+                            <span style="font-weight: 600;">1.0.0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280;">Database</span>
+                            <span style="font-weight: 600;">SQLite</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                            <span style="color: #6b7280;">Server Status</span>
+                            <span style="padding: 4px 12px; background: #d1fae5; color: #065f46; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">ONLINE</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0;">
+                            <span style="color: #6b7280;">Last Backup</span>
+                            <span style="font-weight: 600;">Never</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.nav-item:hover { background: #f3f4f6; color: #111827; }
+</style>
+{% endblock %}

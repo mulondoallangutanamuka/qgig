@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Interested Professionals - {{ gig.title }} - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-bottom: 2rem;">
+        <a href="{{ url_for('web.my_gigs') }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to My Gigs
+        </a>
+    </div>
+    
+    <div class="card" style="margin-bottom: 2rem;">
+        <h2 style="margin-bottom: 1rem;">{{ gig.title }}</h2>
+        <div class="gig-meta">
+            <span class="gig-meta-item">
+                <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+            </span>
+            <span class="gig-meta-item">
+                <i class="fas fa-money-bill-wave"></i> UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+            </span>
+            <span class="gig-meta-item">
+                <i class="fas fa-users"></i> {{ interests|length }} Interested
+            </span>
+        </div>
+    </div>
+    
+    <h3 style="margin-bottom: 1.5rem;">
+        <i class="fas fa-users"></i> Interested Professionals ({{ interests|length }})
+    </h3>
+    
+    {% if interests %}
+    <div class="grid grid-2">
+        {% for interest in interests %}
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div style="flex: 1;">
+                    <h4 style="margin-bottom: 0.5rem;">
+                        {{ interest.professional.full_name or interest.professional.user.email }}
+                    </h4>
+                    <div style="color: var(--gray-600); font-size: 0.875rem;">
+                        <i class="fas fa-clock"></i> Expressed interest {{ interest.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                    </div>
+                </div>
+                <span class="badge-status badge-open" style="background: #fef3c7; color: #92400e;">
+                    <i class="fas fa-star"></i> NEW
+                </span>
+            </div>
+            
+            {% if interest.professional.bio %}
+            <p style="color: var(--gray-700); margin-bottom: 1rem;">{{ interest.professional.bio[:200] }}{% if interest.professional.bio|length > 200 %}...{% endif %}</p>
+            {% endif %}
+            
+            <div class="gig-meta" style="margin-bottom: 1rem;">
+                {% if interest.professional.skills %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-tools"></i> {{ interest.professional.skills }}
+                </span>
+                {% endif %}
+                {% if interest.professional.location %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-map-marker-alt"></i> {{ interest.professional.location }}
+                </span>
+                {% endif %}
+            </div>
+            
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <a href="{{ url_for('web.view_professional_profile', professional_id=interest.professional.id) }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-user"></i> View Profile
+                </a>
+                <button onclick="assignGig({{ gig.id }}, {{ interest.professional.id }})" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-check"></i> Assign Gig
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="text-align: center; padding: 3rem;">
+        <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+        <h3 style="margin-bottom: 0.5rem;">No professionals interested yet</h3>
+        <p style="color: var(--gray-600);">Check back later for interested professionals</p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+async function assignGig(gigId, professionalId) {
+    if (!confirm('Assign this gig to the selected professional?')) return;
+    
+    try {
+        const response = await fetch(`/api/jobs/${gigId}/assign`, {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ professional_id: professionalId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            alert('Gig assigned successfully!');
+            window.location.href = '/gigs/my-gigs';
+        } else {
+            alert(data.error || 'Failed to assign gig');
+        }
+    } catch (error) {
+        alert('Network error. Please try again.');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+
+{% block title %}{{ gig.title }} - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Browse
+        </a>
+        {% if current_user and current_user.role == 'professional' and gig.status.value == 'open' %}
+            {% if user_has_interest %}
+            <button class="btn btn-success btn-lg" disabled>
+                <i class="fas fa-check"></i> Interest Expressed
+            </button>
+            {% else %}
+            <form method="POST" action="{{ url_for('web.express_interest', gig_id=gig.id) }}" style="display: inline;">
+                <button type="submit" class="btn btn-secondary btn-lg">
+                    <i class="fas fa-hand-paper"></i> Express Interest
+                </button>
+            </form>
+            {% endif %}
+        {% endif %}
+    </div>
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <!-- Main Content -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ gig.title }}</h1>
+                        <div class="gig-meta">
+                            <span class="gig-meta-item">
+                                <i class="fas fa-building"></i> {{ gig.institution.name }}
+                            </span>
+                            <span class="gig-meta-item">
+                                <i class="fas fa-calendar"></i> Posted {{ gig.created_at.strftime('%b %d, %Y') }}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+                </div>
+                
+                <div class="card-body">
+                    <h3 style="margin-bottom: 1rem;">Description</h3>
+                    <p style="line-height: 1.8; color: var(--gray-700);">{{ gig.description }}</p>
+                    
+                    <hr style="margin: 2rem 0;">
+                    
+                    <h3 style="margin-bottom: 1rem;">Gig Details</h3>
+                    
+                    <!-- Payment Amount - Prominent Display -->
+                    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem; text-align: center;">
+                        <div style="color: rgba(255,255,255,0.9); font-size: 0.875rem; margin-bottom: 0.5rem;">Payment Amount</div>
+                        <div style="color: white; font-size: 2rem; font-weight: 700;">
+                            UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                        <div>
+                            <div style="color: var(--gray-600); margin-bottom: 0.25rem;">Location</div>
+                            <div style="font-weight: 600;"><i class="fas fa-map-marker-alt"></i> {{ gig.location }}</div>
+                        </div>
+                        {% if gig.duration_hours %}
+                        <div>
+                            <div style="color: var(--gray-600); margin-bottom: 0.25rem;">Duration</div>
+                            <div style="font-weight: 600;"><i class="fas fa-clock"></i> {{ gig.duration_hours }} hours</div>
+                        </div>
+                        {% endif %}
+                        <div>
+                            <div style="color: var(--gray-600); margin-bottom: 0.25rem;">Status</div>
+                            <div><span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span></div>
+                        </div>
+                    </div>
+                    
+                    {% if gig.is_urgent %}
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #fee2e2; border-left: 4px solid var(--danger-color); border-radius: var(--border-radius);">
+                        <strong style="color: #991b1b;"><i class="fas fa-fire"></i> URGENT GIG</strong>
+                        <p style="color: #991b1b; margin-top: 0.5rem; margin-bottom: 0;">This gig requires immediate attention!</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if current_user and current_user.role.value == 'professional' and gig.status.value == 'open' %}
+                <div class="card-footer">
+                    {% if user_has_interest %}
+                    <button class="btn btn-success btn-lg btn-block" disabled>
+                        <i class="fas fa-check"></i> Interest Expressed
+                    </button>
+                    {% else %}
+                    <button onclick="expressInterest()" class="btn btn-primary btn-lg btn-block">
+                        <i class="fas fa-hand-paper"></i> Express Interest
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Reviews Section -->
+            {% if gig.ratings %}
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-star"></i> Reviews ({{ gig.ratings|length }})</h3>
+                </div>
+                <div class="card-body">
+                    {% for rating in gig.ratings %}
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--gray-200);">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                            <strong>{{ rating.rater.email.split('@')[0] }}</strong>
+                            <div class="rating-stars">
+                                {% for i in range(5) %}
+                                <i class="fas fa-star {% if i < rating.rating %}filled{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% if rating.review %}
+                        <p style="color: var(--gray-700);">{{ rating.review }}</p>
+                        {% endif %}
+                        <small style="color: var(--gray-500);">{{ rating.created_at.strftime('%b %d, %Y') }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-building"></i> Institution</h3>
+                </div>
+                <div class="card-body">
+                    <h4 style="margin-bottom: 0.5rem;">{{ gig.institution.name }}</h4>
+                    {% if gig.institution.description %}
+                    <p style="color: var(--gray-600); margin-bottom: 1rem;">{{ gig.institution.description[:100] }}...</p>
+                    {% endif %}
+                    
+                    {% if gig.institution.contact_email %}
+                    <div style="margin-bottom: 0.5rem;">
+                        <i class="fas fa-envelope"></i> {{ gig.institution.contact_email }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if gig.institution.contact_phone %}
+                    <div style="margin-bottom: 0.5rem;">
+                        <i class="fas fa-phone"></i> {{ gig.institution.contact_phone }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if gig.institution.location %}
+                    <div>
+                        <i class="fas fa-map-marker-alt"></i> {{ gig.institution.location }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if gig.interest_count > 0 %}
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-body text-center">
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-color);">
+                        {{ gig.interest_count }}
+                    </div>
+                    <div style="color: var(--gray-600);">
+                        Professional(s) Interested
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if current_user %}
+            <!-- Messaging removed - use interest workflow instead -->
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function expressInterest() {
+    console.log('=== Express Interest Started ===');
+    
+    // Get button reference
+    const btn = event.target;
+    const originalHtml = btn.innerHTML;
+    const originalClasses = btn.className;
+    
+    // Disable button immediately to prevent double submission
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    console.log('Button disabled, showing loading state');
+    
+    // Set timeout to reset button if no response after 5 seconds
+    const timeoutId = setTimeout(() => {
+        console.warn('Request timeout after 5 seconds');
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        btn.className = originalClasses;
+        alert('Request timed out. Please try again.');
+    }, 5000);
+    
+    try {
+        console.log('Sending POST request to /jobs/{{ gig.id }}/interest');
+        
+        const response = await fetch('/jobs/{{ gig.id }}/interest', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // Clear timeout since we got a response
+        clearTimeout(timeoutId);
+        console.log('Response received:', response.status, response.statusText);
+        
+        // Parse response
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        // Handle response based on status
+        if (response.ok) {
+            console.log('✓ Interest submitted successfully');
+            
+            // Update button to success state
+            btn.innerHTML = '<i class="fas fa-check"></i> Interest Expressed!';
+            btn.className = 'btn btn-success btn-lg';
+            btn.disabled = true;
+            
+            // Show toast notification
+            if (window.showToast) {
+                window.showToast('Success!', 'Your interest has been submitted. The institution will be notified.', 'success');
+            } else {
+                alert('Interest expressed successfully! The institution will be notified.');
+            }
+            
+            // Reload after a short delay to show updated state
+            console.log('Reloading page in 2 seconds...');
+            setTimeout(() => {
+                console.log('Reloading now');
+                location.reload();
+            }, 2000);
+        } else {
+            // Handle error response
+            console.error('Request failed:', data.error || 'Unknown error');
+            alert(data.error || 'Failed to express interest');
+            
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            btn.className = originalClasses;
+        }
+    } catch (error) {
+        // Clear timeout on error
+        clearTimeout(timeoutId);
+        
+        console.error('Network error:', error);
+        alert('Network error. Please check your connection and try again.');
+        
+        // Reset button
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        btn.className = originalClasses;
+    }
+    
+    console.log('=== Express Interest Completed ===');
+}
+</script>
+{% endblock %}

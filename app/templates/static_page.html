@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - QGig{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">{{ title }}</h1>
+    
+    <div class="card">
+        <div class="card-body">
+            <p>{{ content }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Earnings - Professional Dashboard{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1200px; padding: 2rem;">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
+            <i class="fas fa-wallet"></i> My Earnings
+        </h1>
+        <p style="color: #6b7280;">Track your payments and earnings</p>
+    </div>
+
+    <!-- Earnings Summary -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <i class="fas fa-money-bill-wave" style="font-size: 2rem; opacity: 0.9;"></i>
+            </div>
+            <p style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Earnings</p>
+            <h3 style="font-size: 2.5rem; font-weight: 700;">UGX {{ "{:,.0f}".format(total_earnings) }}</h3>
+            <p style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">All time</p>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <i class="fas fa-clock" style="font-size: 2rem; opacity: 0.9;"></i>
+            </div>
+            <p style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Pending Payments</p>
+            <h3 style="font-size: 2.5rem; font-weight: 700;">UGX {{ "{:,.0f}".format(pending_amount) }}</h3>
+            <p style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">{{ pending_count }} payment(s)</p>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <i class="fas fa-check-circle" style="font-size: 2rem; opacity: 0.9;"></i>
+            </div>
+            <p style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Completed Payments</p>
+            <h3 style="font-size: 2.5rem; font-weight: 700;">{{ completed_count }}</h3>
+            <p style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">Successfully received</p>
+        </div>
+
+        <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <i class="fas fa-calendar-alt" style="font-size: 2rem; opacity: 0.9;"></i>
+            </div>
+            <p style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">This Month</p>
+            <h3 style="font-size: 2.5rem; font-weight: 700;">UGX {{ "{:,.0f}".format(monthly_earnings) }}</h3>
+            <p style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">{{ monthly_count }} payment(s)</p>
+        </div>
+    </div>
+
+    <!-- Earnings Chart -->
+    <div class="card" style="margin-bottom: 2rem;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chart-line"></i> Earnings Trend (Last 6 Months)</h3>
+        </div>
+        <div class="card-body">
+            <div style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; gap: 1rem; padding: 1rem;">
+                {% if monthly_trend %}
+                    {% for month in monthly_trend %}
+                    <div style="flex: 1; display: flex; flex-direction: column; align-items: center;">
+                        <div style="width: 100%; background: linear-gradient(to top, #3b82f6, #60a5fa); border-radius: 4px 4px 0 0; min-height: 20px; height: {{ (month.amount / total_earnings * 100)|int if total_earnings > 0 else 20 }}%;" title="UGX {{ '{:,.0f}'.format(month.amount) }}"></div>
+                        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: #6b7280; text-align: center;">{{ month.month }}</div>
+                        <div style="font-size: 0.7rem; color: #9ca3af; font-weight: 600;">{{ '{:,.0f}'.format(month.amount) }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="text-align: center; color: #6b7280; width: 100%;">No earnings data available yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment History -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-history"></i> Payment History</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div style="overflow-x: auto;">
+                <table class="table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Gig</th>
+                            <th>Institution</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.gig.title[:50] }}...</td>
+                            <td>{{ payment.institution.institution_name }}</td>
+                            <td style="font-weight: 600; color: #10b981;">UGX {{ "{:,.0f}".format(payment.amount) }}</td>
+                            <td>
+                                <span class="badge-status badge-{{ payment.status.value }}">
+                                    {{ payment.status.value.upper() }}
+                                </span>
+                            </td>
+                            <td>{{ payment.created_at.strftime('%b %d, %Y') }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 3rem; color: #6b7280;">
+                                <i class="fas fa-wallet" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                                <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">No payments yet</p>
+                                <p>Your payment history will appear here once institutions pay for your services</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.badge-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-completed { background: #d1fae5; color: #065f46; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-failed { background: #fee2e2; color: #991b1b; }
+</style>
+{% endblock %}

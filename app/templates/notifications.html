@@ -1,0 +1,461 @@
+{% extends "base.html" %}
+
+{% block title %}Notifications - QGig{% endblock %}
+
+{% block content %}
+<div class="container" style="margin-top: 2rem; margin-bottom: 3rem;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0;">
+            <i class="fas fa-bell"></i> Notifications
+            <span id="liveIndicator" style="font-size: 0.5em; color: #10b981; vertical-align: middle;">
+                <i class="fas fa-circle" style="font-size: 0.5em; animation: pulse 2s infinite;"></i> Live
+            </span>
+        </h1>
+        {% if notifications %}
+        <button onclick="deleteAll()" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash-alt"></i> Delete All
+        </button>
+        {% endif %}
+    </div>
+    
+    <!-- Notifications List -->
+    <div id="notificationsContainer">
+        {% if notifications_data %}
+        <div class="card">
+            <div class="card-body" style="padding: 0;">
+                {% for item in notifications_data %}
+                {% set notification = item.notification %}
+                {% set profile = item.profile %}
+                {% set documents = item.documents %}
+                <div class="notification-item" data-id="{{ notification.id }}" 
+                     style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; {% if not notification.is_read %}background: #f0f9ff;{% endif %}">
+                    <div style="display: flex; gap: 1rem; align-items: start;">
+                        <!-- Icon -->
+                        <div style="flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #dbeafe; color: #1e40af;">
+                            <i class="fas fa-bell" style="font-size: 1.25rem;"></i>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div style="flex: 1;">
+                            <h4 style="margin-bottom: 0.5rem; font-weight: 600; font-size: 1.125rem;">
+                                {{ notification.title }}
+                            </h4>
+                            <p style="color: #4b5563; margin-bottom: 0.75rem; line-height: 1.6;">
+                                {{ notification.message }}
+                            </p>
+                            
+                            <!-- Profile Summary & Documents (for job interest notifications) -->
+                            {% if profile %}
+                            <script>
+                                console.log('Profile data:', {{ profile.full_name|tojson }});
+                                console.log('CV document:', {{ documents.cv.file_path|tojson if documents.cv else 'null' }});
+                                console.log('Certificates:', {{ documents.certificates|length if documents.certificates else 0 }});
+                            </script>
+                            <div style="background: #f9fafb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border-left: 3px solid var(--primary-color);">
+                                <h5 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; color: var(--primary-color); font-weight: 600;">
+                                    <i class="fas fa-user-circle"></i> Professional Profile
+                                </h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.875rem;">
+                                    {% if profile.full_name %}
+                                    <div><strong>Name:</strong> {{ profile.full_name }}</div>
+                                    {% endif %}
+                                    {% if profile.phone_number %}
+                                    <div><strong>Phone:</strong> {{ profile.phone_number }}</div>
+                                    {% endif %}
+                                    {% if profile.location %}
+                                    <div><strong>Location:</strong> {{ profile.location }}</div>
+                                    {% endif %}
+                                    {% if profile.profession_category %}
+                                    <div><strong>Profession:</strong> {{ profile.profession_category }}</div>
+                                    {% endif %}
+                                    {% if profile.specialization %}
+                                    <div><strong>Specialization:</strong> {{ profile.specialization }}</div>
+                                    {% endif %}
+                                    {% if profile.hourly_rate %}
+                                    <div><strong>Hourly Rate:</strong> UGX {{ "{:,.0f}".format(profile.hourly_rate) }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Documents Section -->
+                                {% if documents.cv or documents.certificates %}
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                                    <h6 style="margin: 0 0 0.5rem 0; font-size: 0.875rem; font-weight: 600; color: #374151;">
+                                        <i class="fas fa-file-alt"></i> Documents
+                                    </h6>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                        {% if documents.cv %}
+                                        <a href="{{ documents.cv.file_path }}" target="_blank" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
+                                            <i class="fas fa-file-pdf"></i> View CV
+                                        </a>
+                                        {% endif %}
+                                        {% for cert in documents.certificates %}
+                                        <a href="{{ cert.file_path }}" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
+                                            <i class="fas fa-certificate"></i> Certificate {{ loop.index }}
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Actions Row -->
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <!-- Timestamp -->
+                                <small style="color: #6b7280;">
+                                    <i class="fas fa-clock"></i> {{ notification.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                </small>
+                                
+                                <!-- Accept/Reject Buttons (for institution users with job interests) -->
+                                {% if notification.job_interest_id and current_user and current_user.role.value == 'institution' %}
+                                    {% if notification.job_interest and notification.job_interest.status.value == 'pending' %}
+                                        {% if notification.job_interest.job and notification.job_interest.job.status.value != 'assigned' %}
+                                            <button onclick="acceptInterest({{ notification.job_interest_id }}, {{ notification.id }})" 
+                                                    class="btn btn-success btn-sm action-btn" 
+                                                    id="accept-{{ notification.job_interest_id }}"
+                                                    title="Accept this professional for the job">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button onclick="rejectInterest({{ notification.job_interest_id }}, {{ notification.id }})" 
+                                                    class="btn btn-danger btn-sm action-btn" 
+                                                    id="reject-{{ notification.job_interest_id }}"
+                                                    title="Reject this interest">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        {% else %}
+                                            <span class="badge-danger" style="background: #f59e0b;">
+                                                <i class="fas fa-user-check"></i> Position Filled
+                                            </span>
+                                        {% endif %}
+                                    {% elif notification.job_interest and notification.job_interest.status.value == 'accepted' %}
+                                        <span class="badge-success">
+                                            <i class="fas fa-check-circle"></i> Accepted
+                                        </span>
+                                    {% elif notification.job_interest and notification.job_interest.status.value in ['rejected', 'declined'] %}
+                                        <span class="badge-danger">
+                                            <i class="fas fa-times-circle"></i> Rejected
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                                
+                                <!-- Delete Button -->
+                                <button onclick="deleteSingle({{ notification.id }})" 
+                                        class="btn btn-danger btn-sm" 
+                                        style="margin-left: auto;"
+                                        title="Delete this notification">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="card" id="emptyState">
+            <div class="card-body" style="text-align: center; padding: 4rem 2rem;">
+                <i class="fas fa-bell-slash" style="font-size: 4rem; color: #d1d5db; margin-bottom: 1.5rem;"></i>
+                <h3 style="margin-bottom: 0.5rem; color: #374151;">No notifications yet</h3>
+                <p style="color: #6b7280;">You'll see notifications here when you have updates</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Accept interest
+async function acceptInterest(interestId, notificationId) {
+    if (!confirm('Are you sure you want to ACCEPT this professional for the job?')) {
+        return;
+    }
+
+    const acceptBtn = document.getElementById(`accept-${interestId}`);
+    const rejectBtn = document.getElementById(`reject-${interestId}`);
+
+    // Show loading state
+    if (acceptBtn) {
+        acceptBtn.disabled = true;
+        acceptBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+    if (rejectBtn) {
+        rejectBtn.disabled = true;
+        rejectBtn.style.opacity = '0.5';
+    }
+
+    try {
+        const response = await fetch(`/notifications/${notificationId}/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'accept' })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showSuccess('✓ Interest accepted! Professional has been assigned to the job.');
+            
+            // Fade out buttons
+            if (acceptBtn) {
+                acceptBtn.style.transition = 'opacity 0.3s';
+                acceptBtn.style.opacity = '0';
+                setTimeout(() => acceptBtn.remove(), 300);
+            }
+            if (rejectBtn) {
+                rejectBtn.style.transition = 'opacity 0.3s';
+                rejectBtn.style.opacity = '0';
+                setTimeout(() => rejectBtn.remove(), 300);
+            }
+            
+            // Add badge
+            const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (notifElement) {
+                const actionsDiv = notifElement.querySelector('[style*="display: flex"]');
+                if (actionsDiv) {
+                    setTimeout(() => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge-success';
+                        badge.innerHTML = '<i class="fas fa-check-circle"></i> Accepted';
+                        actionsDiv.appendChild(badge);
+                    }, 350);
+                }
+            }
+        } else {
+            showError(data.error || 'Failed to accept interest');
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.innerHTML = '<i class="fas fa-check"></i> Accept';
+            }
+            if (rejectBtn) {
+                rejectBtn.disabled = false;
+                rejectBtn.style.opacity = '1';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred. Please try again.');
+        if (acceptBtn) {
+            acceptBtn.disabled = false;
+            acceptBtn.innerHTML = '<i class="fas fa-check"></i> Accept';
+        }
+        if (rejectBtn) {
+            rejectBtn.disabled = false;
+            rejectBtn.style.opacity = '1';
+        }
+    }
+}
+
+// Reject interest
+async function rejectInterest(interestId, notificationId) {
+    if (!confirm('Are you sure you want to REJECT this interest?')) {
+        return;
+    }
+
+    const acceptBtn = document.getElementById(`accept-${interestId}`);
+    const rejectBtn = document.getElementById(`reject-${interestId}`);
+
+    // Show loading state
+    if (rejectBtn) {
+        rejectBtn.disabled = true;
+        rejectBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    }
+    if (acceptBtn) {
+        acceptBtn.disabled = true;
+        acceptBtn.style.opacity = '0.5';
+    }
+
+    try {
+        const response = await fetch(`/notifications/${notificationId}/respond`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'reject' })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showSuccess('✓ Interest rejected. Professional has been notified.');
+            
+            // Fade out buttons
+            if (acceptBtn) {
+                acceptBtn.style.transition = 'opacity 0.3s';
+                acceptBtn.style.opacity = '0';
+                setTimeout(() => acceptBtn.remove(), 300);
+            }
+            if (rejectBtn) {
+                rejectBtn.style.transition = 'opacity 0.3s';
+                rejectBtn.style.opacity = '0';
+                setTimeout(() => rejectBtn.remove(), 300);
+            }
+            
+            // Add badge
+            const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (notifElement) {
+                const actionsDiv = notifElement.querySelector('[style*="display: flex"]');
+                if (actionsDiv) {
+                    setTimeout(() => {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge-danger';
+                        badge.innerHTML = '<i class="fas fa-times-circle"></i> Rejected';
+                        actionsDiv.appendChild(badge);
+                    }, 350);
+                }
+            }
+        } else {
+            showError(data.error || 'Failed to reject interest');
+            if (rejectBtn) {
+                rejectBtn.disabled = false;
+                rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
+            }
+            if (acceptBtn) {
+                acceptBtn.disabled = false;
+                acceptBtn.style.opacity = '1';
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred. Please try again.');
+        if (rejectBtn) {
+            rejectBtn.disabled = false;
+            rejectBtn.innerHTML = '<i class="fas fa-times"></i> Reject';
+        }
+        if (acceptBtn) {
+            acceptBtn.disabled = false;
+            acceptBtn.style.opacity = '1';
+        }
+    }
+}
+
+// Delete single notification
+async function deleteSingle(notificationId) {
+    if (!confirm('Delete this notification?')) return;
+    
+    try {
+        const response = await fetch(`/api/notifications/${notificationId}`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+            if (notifElement) {
+                notifElement.style.transition = 'opacity 0.3s';
+                notifElement.style.opacity = '0';
+                setTimeout(() => {
+                    notifElement.remove();
+                    const remaining = document.querySelectorAll('.notification-item').length;
+                    if (remaining === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            }
+            showSuccess('Notification deleted');
+        } else {
+            showError('Failed to delete notification');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred');
+    }
+}
+
+// Delete all notifications
+async function deleteAll() {
+    if (!confirm('Delete ALL notifications? This cannot be undone.')) return;
+    
+    try {
+        const response = await fetch('/api/notifications/delete-all', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            showError('Failed to delete notifications');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred');
+    }
+}
+
+// Show success message
+function showSuccess(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 1rem 1.5rem; background: #10b981; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s; display: flex; align-items: center; gap: 0.75rem; max-width: 400px;';
+    toast.innerHTML = `
+        <i class="fas fa-check-circle" style="font-size: 1.25rem;"></i>
+        <span style="flex: 1;">${message}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.8;">&times;</button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s, transform 0.3s';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Show error message
+function showError(message) {
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 1rem 1.5rem; background: #ef4444; color: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s; display: flex; align-items: center; gap: 0.75rem; max-width: 400px;';
+    toast.innerHTML = `
+        <i class="fas fa-exclamation-circle" style="font-size: 1.25rem;"></i>
+        <span style="flex: 1;">${message}</span>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; opacity: 0.8;">&times;</button>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s, transform 0.3s';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(400px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 5000);
+}
+
+// Socket.IO real-time updates
+if (window.qgigSocket) {
+    window.qgigSocket.on('job_interest_sent', function(data) {
+        setTimeout(() => location.reload(), 1000);
+    });
+    
+    window.qgigSocket.on('interest_accepted', function(data) {
+        setTimeout(() => location.reload(), 1000);
+    });
+    
+    window.qgigSocket.on('interest_rejected', function(data) {
+        setTimeout(() => location.reload(), 1000);
+    });
+}
+</script>
+
+<style>
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+</style>
+{% endblock %}

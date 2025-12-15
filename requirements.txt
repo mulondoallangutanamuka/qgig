@@ -1,0 +1,15 @@
+flask
+flask-cors==4.0.1
+flask-socketio
+python-socketio
+sqlalchemy
+alembic
+python-dotenv
+requests
+pydantic
+bcrypt
+flask-jwt-extended
+psycopg2-binary
+pytest
+pytest-playwright
+playwright

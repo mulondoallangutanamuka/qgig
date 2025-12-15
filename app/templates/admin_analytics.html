@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}System Analytics - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: calc(100vh - 80px); background: #f9fafb;">
+    <!-- Admin Sidebar -->
+    <aside style="width: 260px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: calc(100vh - 80px); overflow-y: auto;">
+        <div style="padding: 2rem 1rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
+                <i class="fas fa-shield-alt"></i> System Admin
+            </h2>
+            
+            <nav>
+                <a href="{{ url_for('web.admin_dashboard') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-home" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_users') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-users" style="width: 20px; margin-right: 12px;"></i>
+                    <span>User Management</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_jobs') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-briefcase" style="width: 20px; margin-right: 12px;"></i>
+                    <span>All Jobs</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_documents') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-file-alt" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Documents</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_payments') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-credit-card" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Payments</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_analytics') }}" class="nav-item active" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; background: #dbeafe; color: #1e40af; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-chart-line" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Analytics</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_settings') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-cog" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main style="margin-left: 260px; flex: 1; padding: 2rem; overflow-y: auto;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
+                System Analytics
+            </h1>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Platform-wide insights and trends</p>
+            
+            <!-- Coming Soon Message -->
+            <div style="background: white; border-radius: 12px; padding: 3rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); text-align: center;">
+                <div style="width: 80px; height: 80px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 2rem;">
+                    <i class="fas fa-chart-line" style="font-size: 2.5rem; color: #1e40af;"></i>
+                </div>
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: #111827;">
+                    Advanced Analytics Coming Soon
+                </h2>
+                <p style="color: #6b7280; max-width: 600px; margin: 0 auto 2rem;">
+                    We're building comprehensive analytics dashboards with detailed insights, charts, and reports. This section will include:
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; max-width: 800px; margin: 0 auto;">
+                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                        <i class="fas fa-users" style="font-size: 2rem; color: #10b981; margin-bottom: 1rem;"></i>
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">User Growth</h3>
+                        <p style="font-size: 0.875rem; color: #6b7280;">Track user registration and engagement trends</p>
+                    </div>
+                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                        <i class="fas fa-briefcase" style="font-size: 2rem; color: #1e40af; margin-bottom: 1rem;"></i>
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Job Metrics</h3>
+                        <p style="font-size: 0.875rem; color: #6b7280;">Analyze job posting and completion rates</p>
+                    </div>
+                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                        <i class="fas fa-dollar-sign" style="font-size: 2rem; color: #f59e0b; margin-bottom: 1rem;"></i>
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Revenue Insights</h3>
+                        <p style="font-size: 0.875rem; color: #6b7280;">Monitor platform revenue and transactions</p>
+                    </div>
+                    <div style="padding: 1.5rem; background: #f9fafb; border-radius: 8px;">
+                        <i class="fas fa-chart-bar" style="font-size: 2rem; color: #6366f1; margin-bottom: 1rem;"></i>
+                        <h3 style="font-weight: 600; margin-bottom: 0.5rem;">Performance</h3>
+                        <p style="font-size: 0.875rem; color: #6b7280;">System performance and usage statistics</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.nav-item:hover { background: #f3f4f6; color: #111827; }
+</style>
+{% endblock %}

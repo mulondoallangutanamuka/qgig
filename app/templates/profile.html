@@ -1,0 +1,487 @@
+{% extends "base.html" %}
+{% block title %}Profile - QGig{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="profile-header">
+        <img src="{% if profile and profile.profile_picture %}{{ profile.profile_picture }}{% else %}https://ui-avatars.com/api/?name={{ current_user.email }}{% endif %}" 
+             alt="Profile" class="profile-avatar" id="profileAvatar">
+        <h1 class="profile-name">{{ current_user.email.split('@')[0] }}</h1>
+        <p class="profile-role">{{ current_user.role|title }}</p>
+    </div>
+    
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user"></i> Profile Information</h3>
+                    <a href="{{ url_for('web.edit_profile') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('web.update_profile') }}" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" value="{{ current_user.email }}" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Username</label>
+                            <input type="text" name="username" class="form-control" value="{{ current_user.username or '' }}" placeholder="Choose a unique username">
+                        </div>
+                        {% if current_user.role.value == 'professional' and profile %}
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ profile.name or '' if profile else '' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" name="phone_number" class="form-control" value="{{ profile.phone_number or '' }}" placeholder="e.g., +256 700 000 000">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Skills</label>
+                            <input type="text" name="skills" class="form-control" value="{{ profile.skills or '' }}" 
+                                   placeholder="e.g., Nursing, First Aid, Patient Care">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Bio</label>
+                            <textarea name="bio" class="form-control" rows="4" placeholder="Tell us about yourself">{{ profile.bio or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Profession Category *</label>
+                            <select name="profession_category" class="form-control" id="profession_category" onchange="toggleRegistrationFields()" required>
+                                <option value="">Select profession category</option>
+                                <option value="Health" {% if profile.profession_category == 'Health' %}selected{% endif %}>Health/Medical</option>
+                                <option value="Formal" {% if profile.profession_category == 'Formal' %}selected{% endif %}>Formal Professional (Law, Accounting, etc.)</option>
+                                <option value="IT" {% if profile.profession_category == 'IT' %}selected{% endif %}>IT/Technology</option>
+                                <option value="Engineering" {% if profile.profession_category == 'Engineering' %}selected{% endif %}>Engineering</option>
+                                <option value="Education" {% if profile.profession_category == 'Education' %}selected{% endif %}>Education</option>
+                                <option value="Other" {% if profile.profession_category == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group" id="registration_fields" style="display: {% if profile.profession_category in ['Health', 'Formal'] %}block{% else %}none{% endif %};">
+                            <label class="form-label">Professional Registration Number *</label>
+                            <input type="text" name="registration_number" class="form-control" id="registration_number" value="{{ profile.registration_number or '' }}" placeholder="e.g., MC/2024/12345">
+                            <small style="color: #6b7280; margin-top: 0.25rem; display: block;">Required for Health and Formal professions</small>
+                        </div>
+                        <div class="form-group" id="issuing_body_field" style="display: {% if profile.profession_category in ['Health', 'Formal'] %}block{% else %}none{% endif %};">
+                            <label class="form-label">Issuing Body *</label>
+                            <input type="text" name="issuing_body" class="form-control" id="issuing_body" value="{{ profile.issuing_body or '' }}" placeholder="e.g., Medical Council of Uganda">
+                            <small style="color: #6b7280; margin-top: 0.25rem; display: block;">The body that issued your registration</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Specialization</label>
+                            <input type="text" name="specialization" class="form-control" value="{{ profile.specialization or '' }}" placeholder="e.g., Pediatric Nurse, ICU Specialist">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Education</label>
+                            <textarea name="education" class="form-control" rows="3" placeholder="List your educational qualifications">{{ profile.education or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Certifications</label>
+                            <textarea name="certifications" class="form-control" rows="3" placeholder="List your certifications and licenses">{{ profile.certifications or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Experience</label>
+                            <textarea name="experience" class="form-control" rows="4" placeholder="Describe your work experience">{{ profile.experience or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Languages</label>
+                            <input type="text" name="languages" class="form-control" value="{{ profile.languages or '' }}" placeholder="e.g., English, Luganda, Swahili">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label class="form-label">Hourly Rate (UGX)</label>
+                                <input type="number" name="hourly_rate" class="form-control" value="{{ profile.hourly_rate or '' }}">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Daily Rate (UGX)</label>
+                                <input type="number" name="daily_rate" class="form-control" value="{{ profile.daily_rate or '' }}">
+                            </div>
+                        </div>
+                        {% elif current_user.role.value == 'institution' %}
+                        <div class="form-group">
+                            <label class="form-label">Institution Name</label>
+                            <input type="text" name="name" class="form-control" value="{{ profile.name or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="4">{{ profile.description or '' }}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact Email</label>
+                            <input type="email" name="contact_email" class="form-control" value="{{ profile.contact_email or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contact Phone</label>
+                            <input type="tel" name="contact_phone" class="form-control" value="{{ profile.contact_phone or '' }}">
+                        </div>
+                        {% endif %}
+                        <div class="form-group">
+                            <label class="form-label">Location</label>
+                            <input type="text" name="location" class="form-control" value="{{ profile.location or '' if profile else '' }}">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" id="saveProfileBtn">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            {% if current_user.role.value == 'professional' %}
+            <!-- File Upload Section -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-file-upload"></i> Documents & Files</h3>
+                </div>
+                <div class="card-body">
+                    <div style="background: #f3f4f6; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">
+                            <i class="fas fa-file-pdf" style="color: #ef4444;"></i> CV/Resume
+                        </h4>
+                        <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: #6b7280;">
+                            Upload your CV (PDF only, max 5MB)
+                        </p>
+                        <input type="file" id="cvUpload" accept=".pdf" style="display: none;">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('cvUpload').click()">
+                            <i class="fas fa-upload"></i> Choose CV File
+                        </button>
+                        <div id="cvStatus" style="margin-top: 0.75rem; font-size: 0.875rem;"></div>
+                    </div>
+                    
+                    <div style="background: #f3f4f6; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">
+                            <i class="fas fa-certificate" style="color: #3b82f6;"></i> Certificates
+                        </h4>
+                        <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: #6b7280;">
+                            Upload certificates (PDF/JPG/PNG, max 2MB each)
+                        </p>
+                        <input type="file" id="certificateUpload" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('certificateUpload').click()">
+                            <i class="fas fa-upload"></i> Choose Certificate
+                        </button>
+                        <div id="certificateStatus" style="margin-top: 0.75rem; font-size: 0.875rem;"></div>
+                    </div>
+                    
+                    <div style="background: #f3f4f6; padding: 1.5rem; border-radius: 8px;">
+                        <h4 style="margin: 0 0 0.5rem 0; font-size: 1rem; color: #374151;">
+                            <i class="fas fa-user-circle" style="color: #10b981;"></i> Profile Picture
+                        </h4>
+                        <p style="margin: 0 0 1rem 0; font-size: 0.875rem; color: #6b7280;">
+                            Upload profile picture (JPG/PNG, max 1MB)
+                        </p>
+                        <input type="file" id="profilePicUpload" accept=".jpg,.jpeg,.png" style="display: none;">
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('profilePicUpload').click()">
+                            <i class="fas fa-upload"></i> Choose Picture
+                        </button>
+                        <div id="profilePicStatus" style="margin-top: 0.75rem; font-size: 0.875rem;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <script>
+            // CV Upload
+            document.getElementById('cvUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                document.getElementById('cvStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                
+                fetch('/api/professional/upload-cv', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('cvStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    } else {
+                        document.getElementById('cvStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('cvStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> Upload failed</span>';
+                });
+            });
+            
+            // Certificate Upload
+            document.getElementById('certificateUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                document.getElementById('certificateStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                
+                fetch('/api/professional/upload-certificate', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('certificateStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                    } else {
+                        document.getElementById('certificateStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('certificateStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> Upload failed</span>';
+                });
+            });
+            
+            // Profile Picture Upload
+            document.getElementById('profilePicUpload').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                document.getElementById('profilePicStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+                
+                fetch('/api/professional/upload-profile-picture', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('profilePicStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                        // Update profile avatar immediately
+                        const avatarImg = document.getElementById('profileAvatar');
+                        if (avatarImg && data.file && data.file.url) {
+                            avatarImg.src = data.file.url;
+                        }
+                        // Also update navbar avatar if it exists
+                        const navbarAvatar = document.querySelector('.navbar img[alt="Profile"]');
+                        if (navbarAvatar && data.file && data.file.url) {
+                            navbarAvatar.src = data.file.url;
+                        }
+                    } else {
+                        document.getElementById('profilePicStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('profilePicStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> Upload failed</span>';
+                });
+            });
+            </script>
+            {% endif %}
+        </div>
+        
+        <script>
+        function toggleRegistrationFields() {
+            const professionCategory = document.getElementById('profession_category').value;
+            const registrationFields = document.getElementById('registration_fields');
+            const issuingBodyField = document.getElementById('issuing_body_field');
+            const registrationInput = document.getElementById('registration_number');
+            const issuingBodyInput = document.getElementById('issuing_body');
+            
+            if (professionCategory === 'Health' || professionCategory === 'Formal') {
+                registrationFields.style.display = 'block';
+                issuingBodyField.style.display = 'block';
+                registrationInput.required = true;
+                issuingBodyInput.required = true;
+            } else {
+                registrationFields.style.display = 'none';
+                issuingBodyField.style.display = 'none';
+                registrationInput.required = false;
+                issuingBodyInput.required = false;
+            }
+        }
+        
+        // Validate form before submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const professionCategory = document.getElementById('profession_category').value;
+            const registrationNumber = document.getElementById('registration_number').value;
+            const issuingBody = document.getElementById('issuing_body').value;
+            
+            if ((professionCategory === 'Health' || professionCategory === 'Formal')) {
+                if (!registrationNumber || !issuingBody) {
+                    e.preventDefault();
+                    alert('Registration number and issuing body are required for Health and Formal professions');
+                    return false;
+                }
+            }
+        });
+        </script>
+        
+        <div>
+            {% if current_user.role.value == 'professional' and profile %}
+            <!-- Profile Summary Card -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-user-circle"></i> Profile Summary</h3>
+                </div>
+                <div class="card-body">
+                    {% if profile.full_name %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Full Name</div>
+                        <div style="font-size: 1rem; font-weight: 500;">{{ profile.full_name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.phone_number %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Phone</div>
+                        <div style="font-size: 1rem;"><i class="fas fa-phone" style="color: var(--primary-color); margin-right: 0.5rem;"></i>{{ profile.phone_number }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.location %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Location</div>
+                        <div style="font-size: 1rem;"><i class="fas fa-map-marker-alt" style="color: var(--danger-color); margin-right: 0.5rem;"></i>{{ profile.location }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.profession_category %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Profession</div>
+                        <div style="font-size: 1rem;"><i class="fas fa-briefcase" style="color: var(--secondary-color); margin-right: 0.5rem;"></i>{{ profile.profession_category }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.specialization %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Specialization</div>
+                        <div style="font-size: 0.875rem;">{{ profile.specialization }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.skills %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Skills</div>
+                        <div style="font-size: 0.875rem;">{{ profile.skills }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.hourly_rate or profile.daily_rate %}
+                    <div style="margin-bottom: 1rem; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Rates</div>
+                        {% if profile.hourly_rate %}
+                        <div style="font-size: 0.875rem; margin-bottom: 0.25rem;">
+                            <i class="fas fa-clock" style="color: var(--warning-color); margin-right: 0.5rem;"></i>
+                            <strong>Hourly:</strong> UGX {{ "{:,.0f}".format(profile.hourly_rate) }}
+                        </div>
+                        {% endif %}
+                        {% if profile.daily_rate %}
+                        <div style="font-size: 0.875rem;">
+                            <i class="fas fa-calendar-day" style="color: var(--warning-color); margin-right: 0.5rem;"></i>
+                            <strong>Daily:</strong> UGX {{ "{:,.0f}".format(profile.daily_rate) }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.registration_number %}
+                    <div style="margin-bottom: 0; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Registration</div>
+                        <div style="font-size: 0.875rem; margin-bottom: 0.25rem;"><strong>Number:</strong> {{ profile.registration_number }}</div>
+                        {% if profile.issuing_body %}
+                        <div style="font-size: 0.875rem; color: var(--gray-600);"><strong>Issued by:</strong> {{ profile.issuing_body }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% elif current_user.role.value == 'institution' and profile %}
+            <!-- Institution Summary Card -->
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-building"></i> Institution Summary</h3>
+                </div>
+                <div class="card-body">
+                    {% if profile.name %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Institution Name</div>
+                        <div style="font-size: 1rem; font-weight: 500;">{{ profile.name }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.contact_email %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Contact Email</div>
+                        <div style="font-size: 0.875rem;"><i class="fas fa-envelope" style="color: var(--primary-color); margin-right: 0.5rem;"></i>{{ profile.contact_email }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.contact_phone %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Contact Phone</div>
+                        <div style="font-size: 0.875rem;"><i class="fas fa-phone" style="color: var(--primary-color); margin-right: 0.5rem;"></i>{{ profile.contact_phone }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.location %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.25rem;">Location</div>
+                        <div style="font-size: 0.875rem;"><i class="fas fa-map-marker-alt" style="color: var(--danger-color); margin-right: 0.5rem;"></i>{{ profile.location }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if profile.description %}
+                    <div style="margin-bottom: 0; padding-top: 1rem; border-top: 1px solid var(--gray-200);">
+                        <div style="color: var(--gray-600); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; margin-bottom: 0.5rem;">Description</div>
+                        <div style="font-size: 0.875rem; line-height: 1.5;">{{ profile.description }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-star"></i> Rating</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div style="font-size: 3rem; font-weight: 700; color: var(--warning-color);">
+                        {{ average_rating|round(1) }}
+                    </div>
+                    <div class="rating-stars" style="justify-content: center; font-size: 1.5rem; margin: 1rem 0;">
+                        {% for i in range(5) %}
+                        <i class="fas fa-star {% if i < average_rating %}filled{% endif %}"></i>
+                        {% endfor %}
+                    </div>
+                    <p style="color: var(--gray-600);">Based on {{ total_ratings }} review(s)</p>
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistics</h3>
+                </div>
+                <div class="card-body">
+                    {% if current_user.role.value == 'professional' %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">Gigs Completed</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">{{ stats.completed_gigs if stats.completed_gigs is defined else 0 }}</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">Total Earned</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--secondary-color);">
+                            UGX {{ "{:,.0f}".format(stats.total_earned if stats.total_earned is defined else 0) }}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">Gigs Posted</div>
+                        <div style="font-size: 1.5rem; font-weight: 700;">{{ stats.total_gigs if stats.total_gigs is defined else 0 }}</div>
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <div style="color: var(--gray-600); font-size: 0.875rem;">Total Spent</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);">
+                            UGX {{ "{:,.0f}".format(stats.total_spent if stats.total_spent is defined else 0) }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

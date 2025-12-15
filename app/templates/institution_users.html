@@ -1,0 +1,189 @@
+{% extends "institution_dashboard.html" %}
+{% block title %}User Management - QGig{% endblock %}
+
+{% block dashboard_content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; color: #111827;">User Management</h1>
+        <div style="display: flex; gap: 1rem;">
+            <input type="text" id="searchInput" placeholder="Search professionals..." 
+                   style="padding: 0.75rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; width: 300px;">
+        </div>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Professionals</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ professionals | length }}</h3>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Interests</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">
+                {{ professionals | sum(attribute='total_interests') }}
+            </h3>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Accepted</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #10b981;">
+                {{ professionals | sum(attribute='accepted_count') }}
+            </h3>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Rejected</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #ef4444;">
+                {{ professionals | sum(attribute='rejected_count') }}
+            </h3>
+        </div>
+    </div>
+    
+    <!-- Professionals Table -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">
+            Professionals Who Engaged With Your Gigs
+        </h2>
+        
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;" id="professionalsTable">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">PROFESSIONAL</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">EMAIL</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">INTERESTS</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">ACCEPTED</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">REJECTED</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">LAST ACTIVITY</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">ACTIONS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prof in professionals %}
+                    <tr style="border-bottom: 1px solid #f3f4f6;" class="professional-row" data-name="{{ prof.name }}" data-email="{{ prof.email }}">
+                        <td style="padding: 1rem;">
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; font-weight: 600; color: #1e40af;">
+                                    {{ prof.name[0].upper() }}
+                                </div>
+                                <div>
+                                    <p style="font-weight: 600; color: #111827; margin-bottom: 0.25rem;">{{ prof.name }}</p>
+                                    <p style="font-size: 0.75rem; color: #6b7280;">ID: {{ prof.id }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 1rem; color: #6b7280;">{{ prof.email }}</td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span style="padding: 4px 12px; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
+                                {{ prof.total_interests }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span style="padding: 4px 12px; background: #d1fae5; color: #065f46; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
+                                {{ prof.accepted_count }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <span style="padding: 4px 12px; background: #fee2e2; color: #991b1b; border-radius: 12px; font-size: 0.875rem; font-weight: 600;">
+                                {{ prof.rejected_count }}
+                            </span>
+                        </td>
+                        <td style="padding: 1rem; color: #6b7280; font-size: 0.875rem;">
+                            {{ prof.last_activity.strftime('%b %d, %Y') }}
+                        </td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <div style="position: relative; display: inline-block;">
+                                <button onclick="toggleActionsMenu({{ prof.id }})" 
+                                        class="actions-btn"
+                                        style="padding: 0.5rem 1rem; background: var(--primary-color); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.875rem; font-weight: 500; box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2); transition: all 0.2s;">
+                                    <i class="fas fa-ellipsis-v"></i> Actions
+                                </button>
+                                <div id="actions-menu-{{ prof.id }}" class="actions-dropdown" style="display: none; position: absolute; right: 0; top: 100%; margin-top: 0.5rem; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); min-width: 180px; z-index: 1000; border: 1px solid #e5e7eb;">
+                                    <a href="/professional/{{ prof.id }}" style="display: flex; align-items: center; padding: 0.75rem 1rem; color: #111827; text-decoration: none; transition: background 0.2s; border-bottom: 1px solid #f3f4f6;">
+                                        <i class="fas fa-user" style="width: 20px; margin-right: 0.75rem; color: #6b7280;"></i>
+                                        <span>View Profile</span>
+                                    </a>
+                                    <a href="/institution/professional/{{ prof.id }}/history" style="display: flex; align-items: center; padding: 0.75rem 1rem; color: #111827; text-decoration: none; transition: background 0.2s; border-bottom: 1px solid #f3f4f6;">
+                                        <i class="fas fa-history" style="width: 20px; margin-right: 0.75rem; color: #6b7280;"></i>
+                                        <span>View History</span>
+                                    </a>
+                                    <a href="mailto:{{ prof.email }}" style="display: flex; align-items: center; padding: 0.75rem 1rem; color: #111827; text-decoration: none; transition: background 0.2s;">
+                                        <i class="fas fa-envelope" style="width: 20px; margin-right: 0.75rem; color: #6b7280;"></i>
+                                        <span>Send Message</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" style="padding: 3rem; text-align: center; color: #6b7280;">
+                            <i class="fas fa-users" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                            <p style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">No professionals yet</p>
+                            <p>Professionals who express interest in your gigs will appear here</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.actions-dropdown a:hover {
+    background: #f3f4f6;
+}
+.actions-btn:hover {
+    background: #4338ca !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3) !important;
+}
+</style>
+
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('.professional-row');
+    
+    rows.forEach(row => {
+        const name = row.dataset.name.toLowerCase();
+        const email = row.dataset.email.toLowerCase();
+        
+        if (name.includes(searchTerm) || email.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+// Toggle actions dropdown menu
+function toggleActionsMenu(professionalId) {
+    const menu = document.getElementById(`actions-menu-${professionalId}`);
+    const allMenus = document.querySelectorAll('.actions-dropdown');
+    
+    // Close all other menus
+    allMenus.forEach(m => {
+        if (m.id !== `actions-menu-${professionalId}`) {
+            m.style.display = 'none';
+        }
+    });
+    
+    // Toggle current menu
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.actions-btn') && !event.target.closest('.actions-dropdown')) {
+        const allMenus = document.querySelectorAll('.actions-dropdown');
+        allMenus.forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+</script>
+{% endblock %}

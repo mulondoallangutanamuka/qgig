@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block title %}System Admin Dashboard - QGig{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: calc(100vh - 80px); background: #f9fafb;">
+    <!-- Admin Sidebar -->
+    <aside style="width: 260px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: calc(100vh - 80px); overflow-y: auto;">
+        <div style="padding: 2rem 1rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
+                <i class="fas fa-shield-alt"></i> System Admin
+            </h2>
+            
+            <nav>
+                <a href="{{ url_for('web.admin_dashboard') }}" 
+                   class="nav-item active"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s; background: #dbeafe; color: #1e40af; font-weight: 600;">
+                    <i class="fas fa-home" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_users') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-users" style="width: 20px; margin-right: 12px;"></i>
+                    <span>User Management</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_jobs') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-briefcase" style="width: 20px; margin-right: 12px;"></i>
+                    <span>All Jobs</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_documents') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-file-alt" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Documents</span>
+                    {% if stats.pending_documents > 0 %}
+                    <span style="margin-left: auto; background: #ef4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">{{ stats.pending_documents }}</span>
+                    {% endif %}
+                </a>
+                
+                <a href="{{ url_for('web.admin_payments') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-credit-card" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Payments</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_analytics') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-chart-line" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Analytics</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_settings') }}" 
+                   class="nav-item"
+                   style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-cog" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main style="margin-left: 260px; flex: 1; padding: 2rem; overflow-y: auto;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
+                System Overview
+            </h1>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Monitor and manage the entire QGig platform</p>
+            
+            <!-- System Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Total Users -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Users</p>
+                            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ stats.total_users }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-users" style="color: #1e40af; font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; font-size: 0.875rem;">
+                        {{ stats.total_professionals }} Professionals, {{ stats.total_institutions }} Institutions
+                    </p>
+                </div>
+                
+                <!-- Total Jobs -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Jobs</p>
+                            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ stats.total_jobs }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-briefcase" style="color: #10b981; font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="color: #10b981; font-size: 0.875rem;">
+                        <i class="fas fa-arrow-up"></i> {{ stats.open_jobs }} currently open
+                    </p>
+                </div>
+                
+                <!-- Completed Jobs -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Completed</p>
+                            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ stats.completed_jobs }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-check-circle" style="color: #6366f1; font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; font-size: 0.875rem;">
+                        Successfully completed gigs
+                    </p>
+                </div>
+                
+                <!-- Total Revenue -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Revenue</p>
+                            <h3 style="font-size: 1.5rem; font-weight: 700; color: #111827;">UGX {{ "{:,.0f}".format(stats.total_revenue) }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-dollar-sign" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="color: #6b7280; font-size: 0.875rem;">
+                        {{ stats.total_payments }} total payments
+                    </p>
+                </div>
+                
+                <!-- Pending Documents -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Pending Docs</p>
+                            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ stats.pending_documents }}</h3>
+                        </div>
+                        <div style="width: 48px; height: 48px; background: #fee2e2; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-file-alt" style="color: #ef4444; font-size: 1.5rem;"></i>
+                        </div>
+                    </div>
+                    <p style="color: #ef4444; font-size: 0.875rem;">
+                        <i class="fas fa-exclamation-circle"></i> Requires review
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+                <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Quick Actions</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="{{ url_for('web.admin_documents') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                        <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                            <i class="fas fa-file-alt" style="color: #1e40af;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 0.25rem;">Review Documents</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">{{ stats.pending_documents }} pending</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('web.admin_users') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                        <div style="width: 40px; height: 40px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                            <i class="fas fa-users" style="color: #10b981;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 0.25rem;">Manage Users</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">{{ stats.total_users }} users</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('web.admin_jobs') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                        <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                            <i class="fas fa-briefcase" style="color: #f59e0b;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 0.25rem;">View All Jobs</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">{{ stats.total_jobs }} jobs</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('web.admin_analytics') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                        <div style="width: 40px; height: 40px; background: #e0e7ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                            <i class="fas fa-chart-line" style="color: #6366f1;"></i>
+                        </div>
+                        <div>
+                            <p style="font-weight: 600; margin-bottom: 0.25rem;">View Analytics</p>
+                            <p style="font-size: 0.875rem; color: #6b7280;">System insights</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+                <!-- Recent Jobs -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Recent Jobs</h2>
+                    <div style="space-y: 1rem;">
+                        {% for job in recent_jobs %}
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                <p style="font-weight: 600; color: #111827;">{{ job.title[:40] }}...</p>
+                                <span style="padding: 4px 8px; background: {% if job.status.value == 'open' %}#d1fae5{% elif job.status.value == 'completed' %}#dbeafe{% else %}#fee2e2{% endif %}; color: {% if job.status.value == 'open' %}#065f46{% elif job.status.value == 'completed' %}#1e40af{% else %}#991b1b{% endif %}; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                                    {{ job.status.value }}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">{{ job.institution.institution_name }}</p>
+                            <p style="font-size: 0.75rem; color: #9ca3af;">{{ job.created_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                        {% else %}
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">No recent jobs</p>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Recent Users -->
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Recent Users</h2>
+                    <div style="space-y: 1rem;">
+                        {% for user in recent_users %}
+                        <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                <p style="font-weight: 600; color: #111827;">{{ user.email }}</p>
+                                <span style="padding: 4px 8px; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                                    {{ user.role.value }}
+                                </span>
+                            </div>
+                            <p style="font-size: 0.75rem; color: #9ca3af;">Joined {{ user.created_at.strftime('%b %d, %Y') }}</p>
+                        </div>
+                        {% else %}
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">No recent users</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.nav-item:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Gig - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="max-width: 800px; margin: 0 auto;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+            <i class="fas fa-edit"></i> Edit Gig
+        </h1>
+        
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('web.edit_gig', gig_id=gig.id) }}">
+                    <div class="form-group">
+                        <label class="form-label" for="title">
+                            <i class="fas fa-heading"></i> Gig Title *
+                        </label>
+                        <input type="text" id="title" name="title" class="form-control" 
+                               value="{{ gig.title }}" placeholder="e.g., Need Nurse for 4-hour Shift" required>
+                        <small style="color: var(--gray-500);">Be clear and specific about what you need</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="description">
+                            <i class="fas fa-align-left"></i> Description *
+                        </label>
+                        <textarea id="description" name="description" class="form-control" rows="6" 
+                                  placeholder="Describe the gig in detail..." required>{{ gig.description }}</textarea>
+                        <small style="color: var(--gray-500);">Include requirements, responsibilities, and any special instructions</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="location">
+                            <i class="fas fa-map-marker-alt"></i> Location *
+                        </label>
+                        <input type="text" id="location" name="location" class="form-control" 
+                               value="{{ gig.location }}" placeholder="e.g., Nairobi CBD" required>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="job_type">
+                                <i class="fas fa-briefcase"></i> Job Type *
+                            </label>
+                            <select id="job_type" name="job_type" class="form-control" required>
+                                <option value="">Select job type</option>
+                                <option value="Full-time" {% if gig.job_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                                <option value="Part-time" {% if gig.job_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                                <option value="Contract" {% if gig.job_type == 'Contract' %}selected{% endif %}>Contract</option>
+                                <option value="Temporary" {% if gig.job_type == 'Temporary' %}selected{% endif %}>Temporary</option>
+                                <option value="Freelance" {% if gig.job_type == 'Freelance' %}selected{% endif %}>Freelance</option>
+                                <option value="Internship" {% if gig.job_type == 'Internship' %}selected{% endif %}>Internship</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="sector">
+                                <i class="fas fa-industry"></i> Sector *
+                            </label>
+                            <select id="sector" name="sector" class="form-control" required>
+                                <option value="">Select sector</option>
+                                <option value="Healthcare" {% if gig.sector == 'Healthcare' %}selected{% endif %}>Healthcare</option>
+                                <option value="Education" {% if gig.sector == 'Education' %}selected{% endif %}>Education</option>
+                                <option value="Technology" {% if gig.sector == 'Technology' %}selected{% endif %}>Technology</option>
+                                <option value="Finance" {% if gig.sector == 'Finance' %}selected{% endif %}>Finance</option>
+                                <option value="Legal" {% if gig.sector == 'Legal' %}selected{% endif %}>Legal</option>
+                                <option value="Construction" {% if gig.sector == 'Construction' %}selected{% endif %}>Construction</option>
+                                <option value="Hospitality" {% if gig.sector == 'Hospitality' %}selected{% endif %}>Hospitality</option>
+                                <option value="Retail" {% if gig.sector == 'Retail' %}selected{% endif %}>Retail</option>
+                                <option value="Manufacturing" {% if gig.sector == 'Manufacturing' %}selected{% endif %}>Manufacturing</option>
+                                <option value="Agriculture" {% if gig.sector == 'Agriculture' %}selected{% endif %}>Agriculture</option>
+                                <option value="Transportation" {% if gig.sector == 'Transportation' %}selected{% endif %}>Transportation</option>
+                                <option value="Other" {% if gig.sector == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group">
+                            <label class="form-label" for="pay_amount">
+                                <i class="fas fa-money-bill-wave"></i> Payment Amount (UGX) *
+                            </label>
+                            <input type="number" id="pay_amount" name="pay_amount" class="form-control" 
+                                   value="{{ gig.pay_amount }}" placeholder="5000" min="0" step="100" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="duration_hours">
+                                <i class="fas fa-clock"></i> Duration (hours)
+                            </label>
+                            <input type="number" id="duration_hours" name="duration_hours" class="form-control" 
+                                   value="{{ gig.duration_hours if gig.duration_hours else '' }}" placeholder="4" min="0.5" step="0.5">
+                            <small style="color: var(--gray-500);">Optional</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" id="is_urgent" name="is_urgent" value="1" {% if gig.is_urgent %}checked{% endif %}>
+                            <label for="is_urgent">
+                                <strong style="color: var(--danger-color);">
+                                    <i class="fas fa-fire"></i> Mark as URGENT
+                                </strong>
+                                <br>
+                                <small style="color: var(--gray-600);">Urgent gigs get priority visibility</small>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <hr style="margin: 2rem 0;">
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="submit" class="btn btn-primary btn-lg" style="flex: 1;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <a href="{{ url_for('web.my_gigs') }}" class="btn btn-outline btn-lg">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

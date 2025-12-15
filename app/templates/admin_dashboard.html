@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - QGig{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+        <i class="fas fa-tachometer-alt"></i> Admin Dashboard
+    </h1>
+    
+    <!-- System Metrics -->
+    <div class="stats-grid" style="margin-bottom: 3rem;">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_users }}</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_professionals }}</div>
+            <div class="stat-label">Professionals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_institutions }}</div>
+            <div class="stat-label">Institutions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_jobs }}</div>
+            <div class="stat-label">Total Jobs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.open_jobs }}</div>
+            <div class="stat-label">Open Jobs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.completed_jobs }}</div>
+            <div class="stat-label">Completed Jobs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_payments }}</div>
+            <div class="stat-label">Payments</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">UGX {{ "{:,.0f}".format(stats.total_revenue) }}</div>
+            <div class="stat-label">Total Revenue</div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-3" style="margin-bottom: 3rem;">
+        <a href="{{ url_for('web.admin_documents') }}" class="card" style="text-decoration: none; color: inherit; transition: transform 0.2s;">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <h3 style="margin-bottom: 0.5rem;">Document Verification</h3>
+                <p style="color: var(--gray-600); margin-bottom: 1rem;">{{ stats.pending_documents }} pending</p>
+                <span class="btn btn-primary btn-sm">Review Documents</span>
+            </div>
+        </a>
+        
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; color: #10b981; margin-bottom: 1rem;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3 style="margin-bottom: 0.5rem;">User Management</h3>
+                <p style="color: var(--gray-600); margin-bottom: 1rem;">Manage all users</p>
+                <span class="btn btn-outline btn-sm">View Users</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body" style="text-align: center;">
+                <div style="font-size: 3rem; color: #f59e0b; margin-bottom: 1rem;">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3 style="margin-bottom: 0.5rem;">Analytics</h3>
+                <p style="color: var(--gray-600); margin-bottom: 1rem;">View detailed reports</p>
+                <span class="btn btn-outline btn-sm">Coming Soon</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="grid grid-2">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Jobs</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Institution</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for job in recent_jobs %}
+                        <tr>
+                            <td>{{ job.title[:30] }}...</td>
+                            <td>{{ job.institution.name }}</td>
+                            <td><span class="badge-status badge-{{ job.status }}">{{ job.status|upper }}</span></td>
+                            <td>{{ job.created_at.strftime('%b %d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Users</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in recent_users %}
+                        <tr>
+                            <td>{{ user.email }}</td>
+                            <td><span class="badge-status">{{ user.role|upper }}</span></td>
+                            <td>{{ user.created_at.strftime('%b %d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

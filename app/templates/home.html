@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Home - QGig{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <h1><i class="fas fa-briefcase"></i> Find Your Next Gig</h1>
+        <p>Connect with professionals or find quick work opportunities in your area</p>
+        
+        <div class="hero-search">
+            <input type="text" placeholder="Search for gigs, skills, or locations..." id="heroSearch">
+            <button onclick="searchGigs()">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+        
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-secondary btn-lg">
+                <i class="fas fa-list"></i> Browse All Gigs
+            </a>
+            {% if not current_user %}
+            <a href="{{ url_for('web.signup') }}" class="btn btn-outline btn-lg" style="border-color: white; color: white;">
+                <i class="fas fa-user-plus"></i> Get Started
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="container" style="margin-top: 4rem;">
+    <h2 class="text-center mb-4" style="font-size: 2rem; font-weight: 700;">How QGig Works</h2>
+    
+    <div class="grid grid-3">
+        <div class="card text-center">
+            <div style="font-size: 3rem; color: var(--primary-color); margin-bottom: 1rem;">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem;">1. Create Account</h3>
+            <p style="color: var(--gray-600);">Sign up as a professional or institution in seconds</p>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; color: var(--secondary-color); margin-bottom: 1rem;">
+                <i class="fas fa-search"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem;">2. Find or Post Gigs</h3>
+            <p style="color: var(--gray-600);">Browse opportunities or post your requirements</p>
+        </div>
+        
+        <div class="card text-center">
+            <div style="font-size: 3rem; color: var(--warning-color); margin-bottom: 1rem;">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <h3 style="margin-bottom: 1rem;">3. Connect & Work</h3>
+            <p style="color: var(--gray-600);">Get matched, complete work, and get paid securely</p>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Gigs Section -->
+<section class="container" style="margin-top: 4rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="font-size: 2rem; font-weight: 700;">Recent Gigs</h2>
+        <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-outline">
+            View All <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    
+    <div class="grid grid-3">
+        {% for gig in recent_gigs %}
+        <div class="gig-card {% if gig.is_urgent %}urgent{% endif %}">
+            <div class="gig-header">
+                <div>
+                    <h3 class="gig-title">{{ gig.title }}</h3>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-building"></i> {{ gig.institution.name }}
+                        </span>
+                    </div>
+                </div>
+                <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+            </div>
+            
+            <p class="gig-description">{{ gig.description[:150] }}{% if gig.description|length > 150 %}...{% endif %}</p>
+            
+            <div class="gig-meta">
+                <span class="gig-meta-item">
+                    <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                </span>
+                {% if gig.duration_hours %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-clock"></i> {{ gig.duration_hours }}h
+                </span>
+                {% endif %}
+                {% if gig.is_urgent %}
+                <span class="badge-urgent">
+                    <i class="fas fa-fire"></i> URGENT
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="gig-footer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="gig-price" style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color);">
+                    UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                </div>
+                <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary btn-sm" style="width: 100%;">
+                    View Details <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+            <p style="color: var(--gray-600); font-size: 1.125rem;">No gigs available yet. Check back soon!</p>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="container" style="margin-top: 4rem; margin-bottom: 4rem;">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_gigs }}</div>
+            <div class="stat-label">Total Gigs Posted</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total_professionals }}</div>
+            <div class="stat-label">Active Professionals</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.completed_gigs }}</div>
+            <div class="stat-label">Completed Gigs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">UGX {{ "{:,.0f}".format(stats.total_paid) }}</div>
+            <div class="stat-label">Total Paid Out</div>
+        </div>
+    </div>
+</section>
+
+<script>
+function searchGigs() {
+    const query = document.getElementById('heroSearch').value;
+    window.location.href = "{{ url_for('web.browse_gigs') }}?search=" + encodeURIComponent(query);
+}
+
+document.getElementById('heroSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchGigs();
+    }
+});
+</script>
+{% endblock %}

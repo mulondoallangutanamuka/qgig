@@ -1,0 +1,300 @@
+{% extends "institution_dashboard.html" %}
+{% block title %}Dashboard Overview - QGig{% endblock %}
+
+{% block dashboard_content %}
+<div>
+    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
+        Dashboard Overview
+    </h1>
+    
+    <!-- KPI Metrics Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Total Gigs Created -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Gigs</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="total-gigs">{{ metrics.total_gigs }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-briefcase" style="color: #1e40af; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #10b981; font-size: 0.875rem;">
+                <i class="fas fa-arrow-up"></i> All time
+            </p>
+        </div>
+        
+        <!-- Active Gigs -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Active Gigs</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="active-gigs">{{ metrics.active_gigs }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-check-circle" style="color: #10b981; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                Currently open
+            </p>
+        </div>
+        
+        <!-- Closed Gigs -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Closed Gigs</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="closed-gigs">{{ metrics.closed_gigs }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fee2e2; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times-circle" style="color: #ef4444; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                Completed/Closed
+            </p>
+        </div>
+        
+        <!-- Pending Interests -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Pending Interests</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="pending-interests">{{ metrics.pending_interests }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-clock" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #f59e0b; font-size: 0.875rem;">
+                <i class="fas fa-exclamation-circle"></i> Awaiting response
+            </p>
+        </div>
+        
+        <!-- Accepted Interests -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Accepted</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="accepted-interests">{{ metrics.accepted_interests }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user-check" style="color: #10b981; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #10b981; font-size: 0.875rem;">
+                <i class="fas fa-arrow-up"></i> {{ metrics.accept_rate }}% rate
+            </p>
+        </div>
+        
+        <!-- Rejected Interests -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Rejected</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="rejected-interests">{{ metrics.rejected_interests }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fee2e2; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user-times" style="color: #ef4444; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                Declined applications
+            </p>
+        </div>
+        
+        <!-- Total Professionals Engaged -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Professionals</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="total-professionals">{{ metrics.total_professionals }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-users" style="color: #6366f1; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                Engaged with your gigs
+            </p>
+        </div>
+        
+        <!-- Response Rate -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Response Rate</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;" id="response-rate">{{ metrics.response_rate }}%</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #dbeafe; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-percentage" style="color: #1e40af; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                Interests responded to
+            </p>
+        </div>
+        
+        <!-- Total Spent -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Spent</p>
+                    <h3 style="font-size: 1.5rem; font-weight: 700; color: #111827;">UGX {{ "{:,.0f}".format(metrics.total_spent) }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-money-bill-wave" style="color: #6366f1; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #6b7280; font-size: 0.875rem;">
+                <a href="{{ url_for('web.institution_payments') }}" style="color: #3b82f6; text-decoration: none;">View payments →</a>
+            </p>
+        </div>
+        
+        <!-- Completed Payments -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Completed Payments</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ metrics.completed_payments }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-check-circle" style="color: #10b981; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #10b981; font-size: 0.875rem;">
+                <i class="fas fa-check"></i> Successfully paid
+            </p>
+        </div>
+        
+        <!-- Pending Payments -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Pending Payments</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ metrics.pending_payments }}</h3>
+                </div>
+                <div style="width: 48px; height: 48px; background: #fef3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-clock" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <p style="color: #f59e0b; font-size: 0.875rem;">
+                <i class="fas fa-exclamation-circle"></i> Awaiting completion
+            </p>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Quick Actions</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('web.post_gig') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="fas fa-plus" style="color: #1e40af;"></i>
+                </div>
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">Post New Gig</p>
+                    <p style="font-size: 0.875rem; color: #6b7280;">Create a new job posting</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('web.institution_notifications') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="fas fa-bell" style="color: #f59e0b;"></i>
+                </div>
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">View Notifications</p>
+                    <p style="font-size: 0.875rem; color: #6b7280;">{{ metrics.pending_interests }} pending</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('web.institution_analytics') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                <div style="width: 40px; height: 40px; background: #d1fae5; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="fas fa-chart-line" style="color: #10b981;"></i>
+                </div>
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">View Analytics</p>
+                    <p style="font-size: 0.875rem; color: #6b7280;">Detailed insights</p>
+                </div>
+            </a>
+            
+            <a href="{{ url_for('web.institution_users') }}" style="display: flex; align-items: center; padding: 1rem; border: 2px solid #e5e7eb; border-radius: 8px; text-decoration: none; color: #111827; transition: all 0.2s;">
+                <div style="width: 40px; height: 40px; background: #e0e7ff; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                    <i class="fas fa-users" style="color: #6366f1;"></i>
+                </div>
+                <div>
+                    <p style="font-weight: 600; margin-bottom: 0.25rem;">Manage Users</p>
+                    <p style="font-size: 0.875rem; color: #6b7280;">{{ metrics.total_professionals }} professionals</p>
+                </div>
+            </a>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem;">
+        <!-- Recent Interests -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Recent Interests</h2>
+            <div style="space-y: 1rem;">
+                {% for interest in recent_interests %}
+                <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                        <p style="font-weight: 600; color: #111827;">{{ interest.professional.full_name }}</p>
+                        <span style="padding: 4px 8px; background: {% if interest.status.value == 'pending' %}#fef3c7{% elif interest.status.value == 'accepted' %}#d1fae5{% else %}#fee2e2{% endif %}; color: {% if interest.status.value == 'pending' %}#92400e{% elif interest.status.value == 'accepted' %}#065f46{% else %}#991b1b{% endif %}; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                            {{ interest.status.value }}
+                        </span>
+                    </div>
+                    <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem;">{{ interest.job.title }}</p>
+                    <p style="font-size: 0.75rem; color: #9ca3af;">{{ interest.created_at.strftime('%b %d, %Y at %I:%M %p') }}</p>
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #6b7280; padding: 2rem;">No recent interests</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Top Performing Gigs -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Top Performing Gigs</h2>
+            <div style="space-y: 1rem;">
+                {% for gig in top_gigs %}
+                <div style="padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 1rem;">
+                    <p style="font-weight: 600; color: #111827; margin-bottom: 0.5rem;">{{ gig.title }}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <p style="font-size: 0.875rem; color: #6b7280;">{{ gig.interest_count }} interests</p>
+                        <span style="padding: 4px 8px; background: #dbeafe; color: #1e40af; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                            {{ gig.status.value|upper }}
+                        </span>
+                    </div>
+                </div>
+                {% else %}
+                <p style="text-align: center; color: #6b7280; padding: 2rem;">No gigs yet</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Real-time dashboard updates via Socket.IO
+if (window.socket) {
+    window.socket.on('dashboard_update', function(data) {
+        console.log('Dashboard update received:', data);
+        
+        // Update metrics
+        if (data.metrics) {
+            document.getElementById('total-gigs').textContent = data.metrics.total_gigs;
+            document.getElementById('active-gigs').textContent = data.metrics.active_gigs;
+            document.getElementById('closed-gigs').textContent = data.metrics.closed_gigs;
+            document.getElementById('pending-interests').textContent = data.metrics.pending_interests;
+            document.getElementById('accepted-interests').textContent = data.metrics.accepted_interests;
+            document.getElementById('rejected-interests').textContent = data.metrics.rejected_interests;
+            document.getElementById('total-professionals').textContent = data.metrics.total_professionals;
+            document.getElementById('response-rate').textContent = data.metrics.response_rate + '%';
+        }
+    });
+}
+</script>
+{% endblock %}

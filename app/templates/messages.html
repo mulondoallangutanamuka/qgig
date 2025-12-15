@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Messages - QGig{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+        <i class="fas fa-envelope"></i> Messages
+    </h1>
+    
+    <div class="message-container">
+        <div class="message-list">
+            <div style="padding: 1rem; border-bottom: 1px solid var(--gray-200);">
+                <input type="text" class="form-control" placeholder="Search messages..." id="searchMessages">
+            </div>
+            {% for conversation in conversations %}
+            <div class="message-item {% if conversation.id == active_conversation %}active{% endif %}"
+                 onclick="loadConversation({{ conversation.id }})">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="{{ conversation.other_user.profile_picture or 'https://ui-avatars.com/api/?name=' + conversation.other_user.email }}" 
+                         style="width: 40px; height: 40px; border-radius: 50%;">
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600;">{{ conversation.other_user.email.split('@')[0] }}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray-600); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {{ conversation.last_message[:50] }}...
+                        </div>
+                    </div>
+                    {% if conversation.unread_count > 0 %}
+                    <span class="badge">{{ conversation.unread_count }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="padding: 2rem; text-align: center; color: var(--gray-500);">
+                <i class="fas fa-inbox" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                <p>No messages yet</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="message-chat">
+            {% if active_conversation %}
+            <div class="message-chat-header">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <img src="{{ active_user.profile_picture or 'https://ui-avatars.com/api/?name=' + active_user.email }}" 
+                         style="width: 40px; height: 40px; border-radius: 50%;">
+                    <div>
+                        <div style="font-weight: 600;">{{ active_user.email.split('@')[0] }}</div>
+                        <div style="font-size: 0.875rem; color: var(--gray-600);">{{ active_user.role|title }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="message-chat-body" id="chatBody">
+                {% for message in messages %}
+                <div class="message-bubble {% if message.sender_id == current_user.id %}sent{% else %}received{% endif %}">
+                    <div>{{ message.content }}</div>
+                    <div style="font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem;">
+                        {{ message.created_at.strftime('%I:%M %p') }}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <form method="POST" action="{{ url_for('web.send_message') }}" class="message-chat-footer">
+                <input type="hidden" name="receiver_id" value="{{ active_user.id }}">
+                <input type="text" class="form-control" name="content" placeholder="Type a message..." id="messageInput" required>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Send
+                </button>
+            </form>
+            {% else %}
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--gray-500);">
+                <div style="text-align: center;">
+                    <i class="fas fa-comments" style="font-size: 4rem; margin-bottom: 1rem;"></i>
+                    <p>Select a conversation to start messaging</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function loadConversation(id) {
+    window.location.href = `/messages?user=${id}`;
+}
+
+async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const content = input.value.trim();
+    
+    if (!content) return;
+    
+    try {
+        const response = await fetch('/api/messages/send', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + localStorage.getItem('token'),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                receiver_id: {{ active_user.id if active_user else 'null' }},
+                content: content
+            })
+        });
+        
+        if (response.ok) {
+            input.value = '';
+            location.reload();
+        }
+
+// Auto-scroll to bottom
+const chatBody = document.getElementById('chatBody');
+if (chatBody) {
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+// Realtime messaging - poll for new messages every 3 seconds
+{% if active_user %}
+let lastMessageCount = {{ messages|length }};
+let isScrolledToBottom = true;
+
+// Track if user is at bottom of chat
+if (chatBody) {
+    chatBody.addEventListener('scroll', function() {
+        isScrolledToBottom = Math.abs(chatBody.scrollHeight - chatBody.scrollTop - chatBody.clientHeight) < 10;
+    });
+}
+
+function checkNewMessages() {
+    fetch(`/messages/check?user={{ active_user.id }}&count=${lastMessageCount}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.new_messages && data.new_messages.length > 0) {
+                // Add new messages to chat
+                data.new_messages.forEach(msg => {
+                    const bubble = document.createElement('div');
+                    bubble.className = `message-bubble ${msg.is_sent ? 'sent' : 'received'}`;
+                    
+                    const content = document.createElement('div');
+                    content.textContent = msg.content;
+                    
+                    const time = document.createElement('div');
+                    time.style.cssText = 'font-size: 0.75rem; opacity: 0.7; margin-top: 0.25rem;';
+                    time.textContent = msg.time;
+                    
+                    bubble.appendChild(content);
+                    bubble.appendChild(time);
+                    chatBody.appendChild(bubble);
+                    
+                    lastMessageCount++;
+                });
+                
+                // Auto-scroll if user was at bottom
+                if (isScrolledToBottom) {
+                    chatBody.scrollTop = chatBody.scrollHeight;
+                }
+                
+                // Play notification sound (optional)
+                // new Audio('/static/notification.mp3').play();
+            }
+        })
+        .catch(error => console.error('Error checking messages:', error));
+}
+
+// Poll every 3 seconds
+setInterval(checkNewMessages, 3000);
+{% endif %}
+
+// Auto-submit form on Enter key
+const messageForm = document.querySelector('.message-chat-footer');
+if (messageForm) {
+    const messageInput = messageForm.querySelector('input[name="content"]');
+    if (messageInput) {
+        messageInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                messageForm.submit();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}

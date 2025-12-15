@@ -1,0 +1,433 @@
+{% extends "base.html" %}
+
+{% block title %}My Gigs - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2.5rem; font-weight: 700;">
+            <i class="fas fa-list"></i> My Gigs
+        </h1>
+        <a href="{{ url_for('web.post_gig') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-plus-circle"></i> Post New Gig
+        </a>
+    </div>
+    
+    <!-- Stats -->
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.total }}</div>
+            <div class="stat-label">Total Gigs</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.open }}</div>
+            <div class="stat-label">Open</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.assigned }}</div>
+            <div class="stat-label">Assigned</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ stats.completed }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+    
+    <!-- Gigs List -->
+    <div class="grid grid-2">
+        {% for gig in gigs %}
+        <div class="gig-card {% if gig.is_urgent %}urgent{% endif %}">
+            <div class="gig-header">
+                <div style="flex: 1;">
+                    <h3 class="gig-title">{{ gig.title }}</h3>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-calendar"></i> {{ gig.created_at.strftime('%b %d, %Y') }}
+                        </span>
+                        <span class="gig-meta-item">
+                            <i class="fas fa-users"></i> {{ gig.interest_count }} interested
+                        </span>
+                    </div>
+                </div>
+                <span class="badge-status badge-{{ gig.status.value if gig.status is not string else gig.status }}">{{ (gig.status.value if gig.status is not string else gig.status)|upper }}</span>
+            </div>
+            
+            <p class="gig-description">{{ gig.description[:150] }}{% if gig.description|length > 150 %}...{% endif %}</p>
+            
+            <div class="gig-meta">
+                <span class="gig-meta-item">
+                    <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                </span>
+                {% if gig.duration_hours %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-clock"></i> {{ gig.duration_hours }}h
+                </span>
+                {% endif %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-money-bill-wave"></i> UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                </span>
+            </div>
+            
+            {% if gig.assigned_professional %}
+            <div style="margin-top: 1rem; padding: 0.75rem; background: var(--gray-100); border-radius: var(--border-radius);">
+                <strong>Assigned to:</strong> {{ gig.assigned_professional.full_name or gig.assigned_professional.user.email }}
+            </div>
+            {% endif %}
+            
+            {% if gig.payment_status %}
+            <div style="margin-top: 1rem; padding: 0.75rem; background: {% if gig.payment_status == 'completed' %}#d1fae5{% elif gig.payment_status == 'pending' %}#fef3c7{% else %}#fee2e2{% endif %}; border-radius: var(--border-radius); display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas {% if gig.payment_status == 'completed' %}fa-check-circle{% elif gig.payment_status == 'pending' %}fa-clock{% else %}fa-exclamation-circle{% endif %}" style="color: {% if gig.payment_status == 'completed' %}#065f46{% elif gig.payment_status == 'pending' %}#92400e{% else %}#991b1b{% endif %};"></i>
+                <strong>Payment:</strong> <span style="text-transform: uppercase; font-weight: 600;">{{ gig.payment_status }}</span>
+            </div>
+            {% endif %}
+            
+            <div class="gig-footer">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
+                    <!-- Left side: Primary action buttons -->
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary btn-sm" style="box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        
+                        {% if gig.status.value == 'open' or gig.status.value == 'assigned' %}
+                        <a href="{{ url_for('web.edit_gig', gig_id=gig.id) }}" class="btn btn-outline btn-sm" title="Edit gig" style="box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                        {% endif %}
+                        
+                        {% if gig.status.value == 'open' %}
+                        <button onclick="viewInterested({{ gig.id }})" class="btn btn-secondary btn-sm" style="box-shadow: 0 2px 4px rgba(107, 114, 128, 0.2);">
+                            <i class="fas fa-users"></i> Interested ({{ gig.interest_count }})
+                        </button>
+                        {% endif %}
+                        
+                        {% if gig.status.value == 'completed' and not gig.payment_status %}
+                        <button onclick="initiatePayment({{ gig.id }}, {{ gig.pay_amount }}, '{{ (gig.assigned_professional.full_name or gig.assigned_professional.user.email) if gig.assigned_professional and gig.assigned_professional.user else 'Professional' }}')" class="btn btn-sm" style="background: #3b82f6; color: white; border: none; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);">
+                            <i class="fas fa-credit-card"></i> Pay Now
+                        </button>
+                        {% endif %}
+                        
+                        {% if gig.payment_status == 'pending' %}
+                        <button onclick="retryPayment({{ gig.id }}, {{ gig.pay_amount }}, '{{ (gig.assigned_professional.full_name or gig.assigned_professional.user.email) if gig.assigned_professional and gig.assigned_professional.user else 'Professional' }}')" class="btn btn-sm" style="background: #f59e0b; color: white; border: none; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);">
+                            <i class="fas fa-redo"></i> Retry Payment
+                        </button>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Right side: Status action buttons -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        {% if gig.status.value == 'assigned' %}
+                        <button onclick="completeGig({{ gig.id }})" class="btn btn-sm" style="background: #10b981; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            <i class="fas fa-check-double"></i> Complete
+                        </button>
+                        {% endif %}
+                        
+                        {% if gig.status.value == 'open' %}
+                        <button onclick="closeGig({{ gig.id }})" class="btn btn-sm" title="Close gig" style="background: #10b981; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        {% endif %}
+                        
+                        {% if gig.status.value == 'open' or gig.status.value == 'assigned' %}
+                        <button onclick="deleteGig({{ gig.id }})" class="btn btn-sm" title="Delete gig" style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+            <h3 style="margin-bottom: 0.5rem;">No gigs posted yet</h3>
+            <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Start by posting your first gig</p>
+            <a href="{{ url_for('web.post_gig') }}" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus-circle"></i> Post Your First Gig
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+async function completeGig(gigId) {
+    if (!confirm('Mark this gig as completed? This will allow you to process payment.')) return;
+
+    try {
+        const response = await fetch(`/jobs/${gigId}/complete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Gig marked as completed! You can now process payment.');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to mark gig as completed');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function initiatePayment(gigId, amount, professionalName) {
+    if (!confirm(`Initiate payment of UGX ${amount.toLocaleString()} to ${professionalName}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/jobs/${gigId}/initiate-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.redirect_url) {
+                // Open PesaPal payment page in new window
+                const paymentWindow = window.open(data.redirect_url, 'PesaPal Payment', 'width=800,height=600');
+                
+                // Show status message
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'payment-status-message';
+                statusDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #3b82f6; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 9999;';
+                statusDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="spinner" style="border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite;"></div>
+                        <span>Waiting for payment completion...</span>
+                    </div>
+                `;
+                document.body.appendChild(statusDiv);
+                
+                // Add spinner animation
+                const style = document.createElement('style');
+                style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                document.head.appendChild(style);
+                
+                // Poll payment status every 5 seconds
+                const paymentId = data.payment_id;
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const statusResponse = await fetch(`/jobs/${gigId}/payment-status`, {
+                            credentials: 'same-origin'
+                        });
+                        
+                        if (statusResponse.ok) {
+                            const statusData = await statusResponse.json();
+                            
+                            if (statusData.status === 'completed') {
+                                clearInterval(pollInterval);
+                                statusDiv.style.background = '#10b981';
+                                statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-check-circle"></i><span>Payment completed successfully!</span></div>';
+                                
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 2000);
+                            } else if (statusData.status === 'failed' || statusData.status === 'cancelled') {
+                                clearInterval(pollInterval);
+                                statusDiv.style.background = '#ef4444';
+                                statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-times-circle"></i><span>Payment ' + statusData.status + '</span></div>';
+                                
+                                setTimeout(() => {
+                                    statusDiv.remove();
+                                }, 3000);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Status check error:', error);
+                    }
+                }, 5000);
+                
+                // Stop polling after 5 minutes
+                setTimeout(() => {
+                    clearInterval(pollInterval);
+                    if (document.getElementById('payment-status-message')) {
+                        statusDiv.innerHTML = '<div><i class="fas fa-info-circle"></i> Please refresh the page to see payment status</div>';
+                        setTimeout(() => statusDiv.remove(), 5000);
+                    }
+                }, 300000);
+                
+            } else {
+                alert('Payment initiated successfully');
+                location.reload();
+            }
+        } else {
+            alert(data.error || 'Failed to initiate payment');
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function retryPayment(gigId, amount, professionalName) {
+    if (!confirm(`Retry payment of UGX ${amount.toLocaleString()} to ${professionalName}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/jobs/${gigId}/retry-payment`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            if (data.redirect_url) {
+                // Open PesaPal payment page in new window
+                const paymentWindow = window.open(data.redirect_url, 'PesaPal Payment', 'width=800,height=600');
+                
+                // Show status message
+                const statusDiv = document.createElement('div');
+                statusDiv.id = 'payment-status-message';
+                statusDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #f59e0b; color: white; padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 9999;';
+                statusDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div class="spinner" style="border: 2px solid #fff; border-top: 2px solid transparent; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite;"></div>
+                        <span>Retrying payment...</span>
+                    </div>
+                `;
+                document.body.appendChild(statusDiv);
+                
+                // Add spinner animation if not already present
+                if (!document.querySelector('style[data-payment-spinner]')) {
+                    const style = document.createElement('style');
+                    style.setAttribute('data-payment-spinner', 'true');
+                    style.textContent = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+                    document.head.appendChild(style);
+                }
+                
+                // Poll payment status every 5 seconds
+                const paymentId = data.payment_id;
+                const pollInterval = setInterval(async () => {
+                    try {
+                        const statusResponse = await fetch(`/jobs/${gigId}/payment-status`, {
+                            credentials: 'same-origin'
+                        });
+                        
+                        if (statusResponse.ok) {
+                            const statusData = await statusResponse.json();
+                            
+                            if (statusData.status === 'completed') {
+                                clearInterval(pollInterval);
+                                statusDiv.style.background = '#10b981';
+                                statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-check-circle"></i><span>Payment completed successfully!</span></div>';
+                                
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 2000);
+                            } else if (statusData.status === 'failed' || statusData.status === 'cancelled') {
+                                clearInterval(pollInterval);
+                                statusDiv.style.background = '#ef4444';
+                                statusDiv.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-times-circle"></i><span>Payment ' + statusData.status + '</span></div>';
+                                
+                                setTimeout(() => {
+                                    statusDiv.remove();
+                                }, 3000);
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Status check error:', error);
+                    }
+                }, 5000);
+                
+                // Stop polling after 5 minutes
+                setTimeout(() => {
+                    clearInterval(pollInterval);
+                    if (document.getElementById('payment-status-message')) {
+                        statusDiv.innerHTML = '<div><i class="fas fa-info-circle"></i> Please refresh the page to see payment status</div>';
+                        setTimeout(() => statusDiv.remove(), 5000);
+                    }
+                }, 300000);
+                
+            } else {
+                alert('Payment retry initiated successfully');
+                location.reload();
+            }
+        } else {
+            alert(data.error || 'Failed to retry payment');
+        }
+    } catch (error) {
+        console.error('Payment error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function closeGig(gigId) {
+    if (!confirm('Close this gig? It will no longer accept new interest.')) return;
+
+    try {
+        const response = await fetch(`/jobs/${gigId}/close`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Gig closed successfully');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to close gig');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function deleteGig(gigId) {
+    if (!confirm('Are you sure you want to delete this gig? This action cannot be undone.')) return;
+
+    try {
+        const response = await fetch(`/jobs/${gigId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Gig deleted successfully');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to delete gig');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+function viewInterested(gigId) {
+    window.location.href = `/gigs/${gigId}/interested`;
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+</script>
+{% endblock %}

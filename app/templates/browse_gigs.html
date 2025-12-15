@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Gigs - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+        <i class="fas fa-search"></i> Browse Gigs
+    </h1>
+    
+    <!-- Search and Filter Bar -->
+    <div class="search-filter-bar">
+        <form method="GET" action="{{ url_for('web.browse_gigs') }}">
+            <div class="search-box">
+                <input type="text" name="search" class="search-input" 
+                       placeholder="Search by title, description, or location..." 
+                       value="{{ request.args.get('search', '') }}">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        <option value="open" {% if request.args.get('status') == 'open' %}selected{% endif %}>Open</option>
+                        <option value="assigned" {% if request.args.get('status') == 'assigned' %}selected{% endif %}>Assigned</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">Location</label>
+                    <select name="location" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Locations</option>
+                        {% for loc in locations %}
+                        <option value="{{ loc }}" {% if request.args.get('location') == loc %}selected{% endif %}>{{ loc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">Job Type</label>
+                    <select name="job_type" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Types</option>
+                        <option value="Full-time" {% if request.args.get('job_type') == 'Full-time' %}selected{% endif %}>Full-time</option>
+                        <option value="Part-time" {% if request.args.get('job_type') == 'Part-time' %}selected{% endif %}>Part-time</option>
+                        <option value="Contract" {% if request.args.get('job_type') == 'Contract' %}selected{% endif %}>Contract</option>
+                        <option value="Temporary" {% if request.args.get('job_type') == 'Temporary' %}selected{% endif %}>Temporary</option>
+                        <option value="Freelance" {% if request.args.get('job_type') == 'Freelance' %}selected{% endif %}>Freelance</option>
+                        <option value="Internship" {% if request.args.get('job_type') == 'Internship' %}selected{% endif %}>Internship</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">Sector</label>
+                    <select name="sector" class="form-select" onchange="this.form.submit()">
+                        <option value="">All Sectors</option>
+                        <option value="Healthcare" {% if request.args.get('sector') == 'Healthcare' %}selected{% endif %}>Healthcare</option>
+                        <option value="Education" {% if request.args.get('sector') == 'Education' %}selected{% endif %}>Education</option>
+                        <option value="Technology" {% if request.args.get('sector') == 'Technology' %}selected{% endif %}>Technology</option>
+                        <option value="Finance" {% if request.args.get('sector') == 'Finance' %}selected{% endif %}>Finance</option>
+                        <option value="Legal" {% if request.args.get('sector') == 'Legal' %}selected{% endif %}>Legal</option>
+                        <option value="Construction" {% if request.args.get('sector') == 'Construction' %}selected{% endif %}>Construction</option>
+                        <option value="Hospitality" {% if request.args.get('sector') == 'Hospitality' %}selected{% endif %}>Hospitality</option>
+                        <option value="Retail" {% if request.args.get('sector') == 'Retail' %}selected{% endif %}>Retail</option>
+                        <option value="Manufacturing" {% if request.args.get('sector') == 'Manufacturing' %}selected{% endif %}>Manufacturing</option>
+                        <option value="Agriculture" {% if request.args.get('sector') == 'Agriculture' %}selected{% endif %}>Agriculture</option>
+                        <option value="Transportation" {% if request.args.get('sector') == 'Transportation' %}selected{% endif %}>Transportation</option>
+                        <option value="Other" {% if request.args.get('sector') == 'Other' %}selected{% endif %}>Other</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">Sort By</label>
+                    <select name="sort" class="form-select" onchange="this.form.submit()">
+                        <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest First</option>
+                        <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                        <option value="price_high" {% if request.args.get('sort') == 'price_high' %}selected{% endif %}>Highest Price</option>
+                        <option value="price_low" {% if request.args.get('sort') == 'price_low' %}selected{% endif %}>Lowest Price</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label class="form-label">Urgent Only</label>
+                    <div class="form-check" style="margin-top: 0.5rem;">
+                        <input type="checkbox" name="urgent" value="1" id="urgentFilter" 
+                               {% if request.args.get('urgent') %}checked{% endif %}
+                               onchange="this.form.submit()">
+                        <label for="urgentFilter">Show urgent gigs only</label>
+                    </div>
+                </div>
+            </div>
+            
+            {% if request.args %}
+            <div style="margin-top: 1rem;">
+                <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-times"></i> Clear Filters
+                </a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+    
+    <!-- Results Count -->
+    <div style="margin-bottom: 1.5rem; color: var(--gray-600);">
+        <i class="fas fa-info-circle"></i> Found {{ gigs|length }} gig(s)
+    </div>
+    
+    <!-- Gigs Grid -->
+    <div class="grid grid-2">
+        {% for gig in gigs %}
+        <div class="gig-card {% if gig.is_urgent %}urgent{% endif %}">
+            <div class="gig-header">
+                <div style="flex: 1;">
+                    <h3 class="gig-title">{{ gig.title }}</h3>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-building"></i> {{ gig.institution.name }}
+                        </span>
+                        <span class="gig-meta-item">
+                            <i class="fas fa-calendar"></i> {{ gig.created_at.strftime('%b %d, %Y') }}
+                        </span>
+                    </div>
+                </div>
+                <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+            </div>
+            
+            <p class="gig-description">{{ gig.description[:200] }}{% if gig.description|length > 200 %}...{% endif %}</p>
+            
+            <div class="gig-meta">
+                <span class="gig-meta-item">
+                    <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                </span>
+                {% if gig.duration_hours %}
+                <span class="gig-meta-item">
+                    <i class="fas fa-clock"></i> {{ gig.duration_hours }} hours
+                </span>
+                {% endif %}
+                {% if gig.is_urgent %}
+                <span class="badge-urgent">
+                    <i class="fas fa-fire"></i> URGENT
+                </span>
+                {% endif %}
+            </div>
+            
+            {% if gig.interest_count > 0 %}
+            <div style="margin-top: 1rem; color: var(--gray-600); font-size: 0.875rem;">
+                <i class="fas fa-users"></i> {{ gig.interest_count }} professional(s) interested
+            </div>
+            {% endif %}
+            
+            <div class="gig-footer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div class="gig-price" style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color);">
+                    UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                </div>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary btn-sm" style="flex: 1; min-width: 80px;">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    {% if current_user and current_user.role.value == 'professional' and gig.status.value == 'open' %}
+                        {% if gig.user_has_interest %}
+                        <button class="btn btn-success btn-sm" style="flex: 1; min-width: 100px;" disabled>
+                            <i class="fas fa-check"></i> <span class="btn-text">Interest Sent</span>
+                        </button>
+                        {% else %}
+                        <button id="interest-btn-{{ gig.id }}" onclick="expressInterest({{ gig.id }}, this)" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 100px;">
+                            <i class="fas fa-hand-paper"></i> <span class="btn-text">Interested</span>
+                        </button>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+            <i class="fas fa-search" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+            <h3 style="margin-bottom: 0.5rem;">No gigs found</h3>
+            <p style="color: var(--gray-600);">Try adjusting your search or filters</p>
+            <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-primary" style="margin-top: 1rem;">
+                <i class="fas fa-redo"></i> Reset Search
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 3rem;">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('web.browse_gigs', page=pagination.prev_num, **request.args) }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-chevron-left"></i> Previous
+        </a>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages() %}
+            {% if page_num %}
+                <a href="{{ url_for('web.browse_gigs', page=page_num, **request.args) }}" 
+                   class="btn btn-sm {% if page_num == pagination.page %}btn-primary{% else %}btn-outline{% endif %}">
+                    {{ page_num }}
+                </a>
+            {% else %}
+                <span class="btn btn-sm btn-outline" disabled>...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <a href="{{ url_for('web.browse_gigs', page=pagination.next_num, **request.args) }}" class="btn btn-outline btn-sm">
+            Next <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<script>
+// Check interest status on page load
+document.addEventListener('DOMContentLoaded', async function() {
+    const interestButtons = document.querySelectorAll('[id^="interest-btn-"]');
+    const token = localStorage.getItem('token') || getCookie('session');
+    
+    if (!token) return;
+    
+    for (const btn of interestButtons) {
+        const gigId = btn.id.replace('interest-btn-', '');
+        try {
+            const response = await fetch(`/api/jobs/${gigId}/check-interest`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.has_interest) {
+                    btn.setAttribute('data-has-interest', 'true');
+                    btn.innerHTML = '<i class="fas fa-check"></i> <span class="btn-text">Interest Sent</span>';
+                    btn.className = 'btn btn-success btn-sm';
+                    btn.style.flex = '1';
+                    btn.style.minWidth = '100px';
+                }
+            }
+        } catch (error) {
+            console.error('Error checking interest:', error);
+        }
+    }
+});
+
+async function toggleInterest(gigId, event) {
+    const btn = event.target.closest('button');
+    const hasInterest = btn.getAttribute('data-has-interest') === 'true';
+    
+    if (hasInterest) {
+        await withdrawInterest(gigId, btn);
+    } else {
+        await expressInterest(gigId, btn);
+    }
+}
+
+async function expressInterest(gigId, btn) {
+    console.log('=== Express Interest Started ===');
+    console.log('Job ID:', gigId);
+    
+    const originalHtml = btn.innerHTML;
+    const originalClasses = btn.className;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        const response = await fetch(`/gigs/${gigId}/express-interest`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (response.ok) {
+            console.log('✓ Interest submitted successfully');
+            
+            btn.setAttribute('data-has-interest', 'true');
+            btn.innerHTML = '<i class="fas fa-check"></i> <span class="btn-text">Interest Sent</span>';
+            btn.className = 'btn btn-success btn-sm';
+            btn.disabled = false;
+            
+            showToast('Success!', 'Interest expressed successfully! The institution will be notified.', 'success');
+        } else {
+            console.error('Request failed:', data.error);
+            showToast('Error', data.error || 'Failed to express interest', 'error');
+            
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            btn.className = originalClasses;
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        showToast('Error', 'Network error. Please try again.', 'error');
+        
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        btn.className = originalClasses;
+    }
+}
+
+async function withdrawInterest(gigId, btn) {
+    if (!confirm('Withdraw your interest in this gig?')) return;
+    
+    console.log('=== Withdraw Interest Started ===');
+    console.log('Job ID:', gigId);
+    
+    const originalHtml = btn.innerHTML;
+    
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    try {
+        const token = localStorage.getItem('token') || getCookie('session');
+        const response = await fetch(`/api/jobs/${gigId}/withdraw-interest`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (response.ok) {
+            console.log('✓ Interest withdrawn successfully');
+            
+            btn.setAttribute('data-has-interest', 'false');
+            btn.innerHTML = '<i class="fas fa-hand-paper"></i> <span class="btn-text">Interested</span>';
+            btn.className = 'btn btn-secondary btn-sm';
+            btn.disabled = false;
+            
+            showToast('Success!', 'Interest withdrawn successfully.', 'success');
+        } else {
+            console.error('Request failed:', data.error);
+            showToast('Error', data.error || 'Failed to withdraw interest', 'error');
+            
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        showToast('Error', 'Network error. Please try again.', 'error');
+        
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+    }
+}
+
+function showToast(title, message, type = 'info') {
+    if (window.showToast) {
+        window.showToast(title, message, type);
+    } else {
+        alert(`${title}: ${message}`);
+    }
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+</script>
+{% endblock %}

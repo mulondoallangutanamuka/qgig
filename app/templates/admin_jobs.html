@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Job Management - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; min-height: calc(100vh - 80px); background: #f9fafb;">
+    <!-- Admin Sidebar -->
+    <aside style="width: 260px; background: white; border-right: 1px solid #e5e7eb; position: fixed; height: calc(100vh - 80px); overflow-y: auto;">
+        <div style="padding: 2rem 1rem;">
+            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 2rem; color: #111827;">
+                <i class="fas fa-shield-alt"></i> System Admin
+            </h2>
+            
+            <nav>
+                <a href="{{ url_for('web.admin_dashboard') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-home" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_users') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-users" style="width: 20px; margin-right: 12px;"></i>
+                    <span>User Management</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_jobs') }}" class="nav-item active" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; background: #dbeafe; color: #1e40af; font-weight: 600; transition: all 0.2s;">
+                    <i class="fas fa-briefcase" style="width: 20px; margin-right: 12px;"></i>
+                    <span>All Jobs</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_documents') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-file-alt" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Documents</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_payments') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-credit-card" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Payments</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_analytics') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-chart-line" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Analytics</span>
+                </a>
+                
+                <a href="{{ url_for('web.admin_settings') }}" class="nav-item" style="display: flex; align-items: center; padding: 0.75rem 1rem; margin-bottom: 0.5rem; border-radius: 8px; text-decoration: none; color: #6b7280; transition: all 0.2s;">
+                    <i class="fas fa-cog" style="width: 20px; margin-right: 12px;"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+        </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main style="margin-left: 260px; flex: 1; padding: 2rem; overflow-y: auto;">
+        <div>
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; color: #111827;">
+                Job Management
+            </h1>
+            <p style="color: #6b7280; margin-bottom: 2rem;">Monitor all jobs across the platform</p>
+            
+            <!-- Summary Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Jobs</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">{{ jobs | length }}</h3>
+                </div>
+                
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Open Jobs</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #10b981;">
+                        {{ jobs | selectattr('status.value', 'equalto', 'open') | list | length }}
+                    </h3>
+                </div>
+                
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Completed</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #1e40af;">
+                        {{ jobs | selectattr('status.value', 'equalto', 'completed') | list | length }}
+                    </h3>
+                </div>
+                
+                <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Closed</p>
+                    <h3 style="font-size: 2rem; font-weight: 700; color: #6b7280;">
+                        {{ jobs | selectattr('status.value', 'equalto', 'closed') | list | length }}
+                    </h3>
+                </div>
+            </div>
+            
+            <!-- Jobs Table -->
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2 style="font-size: 1.25rem; font-weight: 600; color: #111827;">All Jobs</h2>
+                    <input type="text" id="searchInput" placeholder="Search jobs..." 
+                           style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; border-radius: 8px; width: 300px;">
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #e5e7eb;">
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">ID</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">TITLE</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">INSTITUTION</th>
+                                <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">STATUS</th>
+                                <th style="padding: 1rem; text-align: right; font-weight: 600; color: #6b7280; font-size: 0.875rem;">BUDGET</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">CREATED</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobsTable">
+                            {% for job in jobs %}
+                            <tr style="border-bottom: 1px solid #f3f4f6;" class="job-row" data-title="{{ job.title }}">
+                                <td style="padding: 1rem; color: #6b7280; font-family: monospace;">{{ job.id }}</td>
+                                <td style="padding: 1rem; color: #111827; font-weight: 500;">{{ job.title[:50] }}{% if job.title|length > 50 %}...{% endif %}</td>
+                                <td style="padding: 1rem; color: #6b7280;">{{ job.institution.institution_name }}</td>
+                                <td style="padding: 1rem; text-align: center;">
+                                    <span style="padding: 4px 12px; background: {% if job.status.value == 'open' %}#d1fae5{% elif job.status.value == 'completed' %}#dbeafe{% elif job.status.value == 'assigned' %}#fef3c7{% else %}#fee2e2{% endif %}; color: {% if job.status.value == 'open' %}#065f46{% elif job.status.value == 'completed' %}#1e40af{% elif job.status.value == 'assigned' %}#92400e{% else %}#991b1b{% endif %}; border-radius: 12px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">
+                                        {{ job.status.value }}
+                                    </span>
+                                </td>
+                                <td style="padding: 1rem; text-align: right; color: #111827; font-weight: 600;">
+                                    UGX {{ "{:,.0f}".format(job.budget) }}
+                                </td>
+                                <td style="padding: 1rem; color: #6b7280; font-size: 0.875rem;">
+                                    {{ job.created_at.strftime('%b %d, %Y') }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<style>
+.nav-item:hover { background: #f3f4f6; color: #111827; }
+</style>
+
+<script>
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('.job-row');
+    
+    rows.forEach(row => {
+        const title = row.dataset.title.toLowerCase();
+        row.style.display = title.includes(searchTerm) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

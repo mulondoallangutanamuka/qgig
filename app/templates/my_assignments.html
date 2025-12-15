@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}My Assignments - QGig{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+        <i class="fas fa-tasks"></i> My Assignments
+    </h1>
+    
+    {% if gigs %}
+    <div class="grid grid-2">
+        {% for gig in gigs %}
+        <div class="gig-card">
+            <div class="gig-header">
+                <div style="flex: 1;">
+                    <h3 class="gig-title">{{ gig.title }}</h3>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-building"></i> {{ gig.institution.name }}
+                        </span>
+                    </div>
+                </div>
+                <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+            </div>
+            
+            <p class="gig-description">{{ gig.description[:150] }}...</p>
+            
+            <div class="gig-meta">
+                <span class="gig-meta-item">
+                    <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                </span>
+                <span class="gig-meta-item">
+                    <i class="fas fa-money-bill-wave"></i> UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                </span>
+            </div>
+            
+            <div class="gig-footer">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    
+                    {% if gig.status.value in ['paid', 'accepted'] %}
+                    <form method="POST" action="{{ url_for('web.complete_job', gig_id=gig.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-success btn-sm" onclick="return confirm('Mark this job as complete?')">
+                            <i class="fas fa-check-circle"></i> Mark Complete
+                        </button>
+                    </form>
+                    {% endif %}
+                    
+                    {% if gig.status.value == 'completed' %}
+                    <a href="{{ url_for('web.rate_job', gig_id=gig.id) }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-star"></i> Rate Job
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+        <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+        <h3 style="margin-bottom: 0.5rem;">No assignments yet</h3>
+        <p style="color: var(--gray-600);">Browse gigs and express your interest to get assigned</p>
+        <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-primary" style="margin-top: 1rem;">
+            <i class="fas fa-search"></i> Browse Gigs
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+{% block title %}Interested - QGig{% endblock %}
+{% block content %}
+<div class="container">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 2rem;">
+        <i class="fas fa-hand-paper"></i> Interested
+    </h1>
+    
+    <!-- Tabs -->
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid var(--gray-200);">
+        <button id="tabJobs" class="tab-button active" onclick="switchTab('jobs')" style="padding: 1rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; border-bottom: 3px solid var(--primary-color); color: var(--primary-color);">
+            Jobs I'm Interested In
+        </button>
+        <button id="tabInstitutions" class="tab-button" onclick="switchTab('institutions')" style="padding: 1rem 1.5rem; border: none; background: none; cursor: pointer; font-weight: 600; border-bottom: 3px solid transparent; color: var(--gray-600);">
+            Institutions Interested in Me
+        </button>
+    </div>
+    
+    <!-- Jobs Tab -->
+    <div id="jobsTab" class="tab-content">
+        <div id="interestedJobsList" class="gigs-grid">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--gray-300);"></i>
+                <p style="margin-top: 1rem; color: var(--gray-600);">Loading jobs...</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Institutions Tab -->
+    <div id="institutionsTab" class="tab-content" style="display: none;">
+        <div id="interestedInstitutionsList" class="gigs-grid">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 3rem; color: var(--gray-300);"></i>
+                <p style="margin-top: 1rem; color: var(--gray-600);">Loading institutions...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentProfessionalId = '{{ professional_id }}';
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadInterestedJobs();
+    loadInterestedInstitutions();
+});
+
+function switchTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.borderBottom = '3px solid transparent';
+        btn.style.color = 'var(--gray-600)';
+    });
+    
+    if (tab === 'jobs') {
+        document.getElementById('tabJobs').classList.add('active');
+        document.getElementById('tabJobs').style.borderBottom = '3px solid var(--primary-color)';
+        document.getElementById('tabJobs').style.color = 'var(--primary-color)';
+        document.getElementById('jobsTab').style.display = 'block';
+        document.getElementById('institutionsTab').style.display = 'none';
+    } else {
+        document.getElementById('tabInstitutions').classList.add('active');
+        document.getElementById('tabInstitutions').style.borderBottom = '3px solid var(--primary-color)';
+        document.getElementById('tabInstitutions').style.color = 'var(--primary-color)';
+        document.getElementById('jobsTab').style.display = 'none';
+        document.getElementById('institutionsTab').style.display = 'block';
+    }
+}
+
+function loadInterestedJobs() {
+    fetch(`/professional/${currentProfessionalId}/interested-jobs`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('interestedJobsList');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+                        <h3 style="margin-bottom: 0.5rem;">No interested jobs yet</h3>
+                        <p style="color: var(--gray-600); margin-bottom: 1.5rem;">Browse gigs and express your interest</p>
+                        <a href="/gigs" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Browse Gigs
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            data.forEach(job => {
+                const card = document.createElement('div');
+                card.className = 'gig-card';
+                card.innerHTML = `
+                    <div class="gig-header">
+                        <h3 class="gig-title">${job.title}</h3>
+                        <span class="badge-status badge-${job.status}">${job.status.toUpperCase()}</span>
+                    </div>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-building"></i> ${job.institution_name}
+                        </span>
+                        <span class="gig-meta-item">
+                            <i class="fas fa-map-marker-alt"></i> ${job.location}
+                        </span>
+                        <span class="gig-meta-item">
+                            <i class="fas fa-info-circle"></i> Interest Status: <strong>${job.interest_status || 'Pending'}</strong>
+                        </span>
+                    </div>
+                    <p class="gig-description">${job.description.substring(0, 150)}${job.description.length > 150 ? '...' : ''}</p>
+                    <div class="gig-footer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="gig-price" style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color);">
+                            UGX ${Number(job.pay_amount).toLocaleString()}
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <a href="/gigs/${job.id}" class="btn btn-primary btn-sm" style="flex: 1;">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                                <button onclick="cancelInterest(${job.id})" class="btn btn-sm" title="Cancel Interest" style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                                    <i class="fas fa-times"></i> Cancel Interest
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading interested jobs:', error);
+            document.getElementById('interestedJobsList').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--danger-color);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 3rem;"></i>
+                    <p style="margin-top: 1rem;">Error loading jobs</p>
+                </div>
+            `;
+        });
+}
+
+function loadInterestedInstitutions() {
+    fetch(`/professional/${currentProfessionalId}/interested-institutions`)
+        .then(response => response.json())
+        .then(data => {
+            const container = document.getElementById('interestedInstitutionsList');
+            
+            if (data.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+                        <i class="fas fa-inbox" style="font-size: 4rem; color: var(--gray-300); margin-bottom: 1rem;"></i>
+                        <h3 style="margin-bottom: 0.5rem;">No institutions interested yet</h3>
+                        <p style="color: var(--gray-600);">Institutions will appear here when they assign you to jobs</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            data.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'gig-card';
+                card.innerHTML = `
+                    <div class="gig-header">
+                        <h3 class="gig-title">${item.job_title}</h3>
+                        <span class="badge-status badge-${item.status}">${item.status.toUpperCase()}</span>
+                    </div>
+                    <div class="gig-meta">
+                        <span class="gig-meta-item">
+                            <i class="fas fa-building"></i> ${item.institution_name}
+                        </span>
+                    </div>
+                    <div class="gig-footer" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <div class="gig-price" style="font-size: 1.25rem; font-weight: 700; color: var(--primary-color);">
+                            UGX ${Number(item.pay_amount).toLocaleString()}
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a href="/gigs/${item.job_id}" class="btn btn-primary btn-sm" style="flex: 1;">
+                                <i class="fas fa-eye"></i> View Job
+                            </a>
+                            <a href="/messages?user=${item.institution_id}" class="btn btn-secondary btn-sm" style="flex: 1;">
+                                <i class="fas fa-envelope"></i> Message
+                            </a>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading interested institutions:', error);
+            document.getElementById('interestedInstitutionsList').innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--danger-color);">
+                    <i class="fas fa-exclamation-circle" style="font-size: 3rem;"></i>
+                    <p style="margin-top: 1rem;">Error loading institutions</p>
+                </div>
+            `;
+        });
+}
+
+async function cancelInterest(jobId) {
+    if (!confirm('Are you sure you want to cancel your interest in this gig?')) return;
+
+    try {
+        const response = await fetch(`/jobs/${jobId}/cancel-interest`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Interest canceled successfully');
+            loadInterestedJobs(); // Refresh the list
+        } else {
+            alert(data.error || 'Failed to cancel interest');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+
+function showSuccessMessage(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success';
+    alertDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; animation: slideIn 0.3s;';
+    alertDiv.innerHTML = `
+        <i class="fas fa-check-circle"></i> ${message}
+        <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        setTimeout(() => alertDiv.remove(), 300);
+    }, 5000);
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+</script>
+{% endblock %}

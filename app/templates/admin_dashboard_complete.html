@@ -1,0 +1,462 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - QGig{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 1400px; padding: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700;">
+            <i class="fas fa-shield-alt"></i> Admin Control Panel
+        </h1>
+        <div style="display: flex; gap: 1rem;">
+            <a href="{{ url_for('web.admin_users') }}" class="btn btn-outline">
+                <i class="fas fa-users"></i> Manage Users
+            </a>
+            <a href="{{ url_for('web.admin_documents') }}" class="btn btn-outline">
+                <i class="fas fa-file-alt"></i> Verify Documents
+            </a>
+            <a href="{{ url_for('web.admin_payments') }}" class="btn btn-outline">
+                <i class="fas fa-money-bill-wave"></i> View Payments
+            </a>
+        </div>
+    </div>
+
+    <!-- Analytics Summary -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none;">
+            <div class="card-body">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Users</div>
+                <div style="font-size: 2rem; font-weight: 700;">{{ analytics.users.total }}</div>
+                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">
+                    {{ analytics.users.professionals }} Professionals | {{ analytics.users.institutions }} Institutions
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none;">
+            <div class="card-body">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Revenue</div>
+                <div style="font-size: 2rem; font-weight: 700;">${{ "{:,.0f}".format(analytics.payments.total_revenue) }}</div>
+                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">
+                    {{ analytics.payments.completed }} completed payments
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; border: none;">
+            <div class="card-body">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Total Gigs</div>
+                <div style="font-size: 2rem; font-weight: 700;">{{ analytics.gigs.total }}</div>
+                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">
+                    {{ analytics.gigs.completed }} completed | {{ analytics.gigs.open }} open
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; border: none;">
+            <div class="card-body">
+                <div style="font-size: 0.875rem; opacity: 0.9; margin-bottom: 0.5rem;">Pending Documents</div>
+                <div style="font-size: 2rem; font-weight: 700;">{{ analytics.documents.pending }}</div>
+                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.5rem;">
+                    {{ analytics.documents.approved }} approved | {{ analytics.documents.rejected }} rejected
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div style="border-bottom: 2px solid #e5e7eb; margin-bottom: 2rem;">
+        <div style="display: flex; gap: 2rem;">
+            <button class="tab-btn active" data-tab="users" style="padding: 1rem 0; border: none; background: none; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                <i class="fas fa-users"></i> Users ({{ analytics.users.total }})
+            </button>
+            <button class="tab-btn" data-tab="documents" style="padding: 1rem 0; border: none; background: none; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                <i class="fas fa-file-alt"></i> Documents ({{ analytics.documents.pending }})
+            </button>
+            <button class="tab-btn" data-tab="payments" style="padding: 1rem 0; border: none; background: none; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                <i class="fas fa-money-bill-wave"></i> Payments ({{ analytics.payments.total }})
+            </button>
+            <button class="tab-btn" data-tab="analytics" style="padding: 1rem 0; border: none; background: none; font-weight: 600; color: #6b7280; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+                <i class="fas fa-chart-line"></i> Analytics
+            </button>
+        </div>
+    </div>
+
+    <!-- Users Tab -->
+    <div class="tab-content" id="users-tab">
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">User Management</h3>
+                <input type="text" id="userSearch" placeholder="Search users..." style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; border-radius: 6px; width: 300px;">
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
+                                <div style="margin-top: 1rem; color: #6b7280;">Loading users...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Documents Tab -->
+    <div class="tab-content" id="documents-tab" style="display: none;">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Document Verification</h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Document Type</th>
+                            <th>File Name</th>
+                            <th>Uploaded</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="documentsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
+                                <div style="margin-top: 1rem; color: #6b7280;">Loading documents...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Tab -->
+    <div class="tab-content" id="payments-tab" style="display: none;">
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 class="card-title">Payment Oversight</h3>
+                <select id="paymentStatusFilter" style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; border-radius: 6px;">
+                    <option value="">All Statuses</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                    <option value="failed">Failed</option>
+                </select>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Payment ID</th>
+                            <th>Institution</th>
+                            <th>Professional</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align: center; padding: 2rem;">
+                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
+                                <div style="margin-top: 1rem; color: #6b7280;">Loading payments...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div class="tab-content" id="analytics-tab" style="display: none;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Institutions</h3>
+                </div>
+                <div class="card-body">
+                    {% if analytics.top_institutions %}
+                        {% for inst in analytics.top_institutions %}
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                            <span>{{ inst.name or 'Institution #' + inst.id|string }}</span>
+                            <span style="font-weight: 600; color: #3b82f6;">{{ inst.gig_count }} gigs</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">No data available</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Top Professionals</h3>
+                </div>
+                <div class="card-body">
+                    {% if analytics.top_professionals %}
+                        {% for prof in analytics.top_professionals %}
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+                            <span>{{ prof.name or 'Professional #' + prof.id|string }}</span>
+                            <span style="font-weight: 600; color: #10b981;">{{ prof.hire_count }} hires</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">No data available</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h3 class="card-title">Revenue Trend (Last 30 Days)</h3>
+                </div>
+                <div class="card-body">
+                    <div id="revenueChart" style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; gap: 0.5rem;">
+                        {% if analytics.daily_revenue %}
+                            {% for day in analytics.daily_revenue %}
+                            <div style="flex: 1; background: linear-gradient(to top, #3b82f6, #60a5fa); border-radius: 4px 4px 0 0; min-height: 20px; height: {{ (day.revenue / analytics.payments.total_revenue * 100)|int }}%; position: relative;" title="{{ day.date }}: ${{ day.revenue }}">
+                                <div style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: #6b7280; white-space: nowrap;">{{ day.date[-5:] }}</div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p style="text-align: center; color: #6b7280; padding: 2rem; width: 100%;">No revenue data available</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-btn:hover {
+    color: #1e40af;
+}
+
+.badge-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-completed { background: #d1fae5; color: #065f46; }
+.badge-pending { background: #fef3c7; color: #92400e; }
+.badge-failed { background: #fee2e2; color: #991b1b; }
+.badge-active { background: #dbeafe; color: #1e40af; }
+.badge-inactive { background: #f3f4f6; color: #6b7280; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+            
+            this.classList.add('active');
+            document.getElementById(this.dataset.tab + '-tab').style.display = 'block';
+        });
+    });
+
+    // Load users
+    loadUsers();
+    loadDocuments();
+    loadPayments();
+
+    // Payment filter
+    document.getElementById('paymentStatusFilter').addEventListener('change', function() {
+        loadPayments(this.value);
+    });
+
+    // User search
+    document.getElementById('userSearch').addEventListener('input', function() {
+        const search = this.value.toLowerCase();
+        document.querySelectorAll('#usersTableBody tr').forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(search) ? '' : 'none';
+        });
+    });
+});
+
+function loadUsers() {
+    fetch('/api/admin/users', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('usersTableBody');
+        if (data.users && data.users.length > 0) {
+            tbody.innerHTML = data.users.map(user => `
+                <tr>
+                    <td>${user.email}</td>
+                    <td><span class="badge-status">${user.role.toUpperCase()}</span></td>
+                    <td><span class="badge-status badge-${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
+                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>
+                        ${user.role !== 'admin' ? `
+                            <button onclick="toggleUserStatus(${user.id}, ${user.is_active})" class="btn btn-sm ${user.is_active ? 'btn-outline' : 'btn-primary'}">
+                                ${user.is_active ? 'Suspend' : 'Activate'}
+                            </button>
+                        ` : '<span style="color: #6b7280;">Admin</span>'}
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">No users found</td></tr>';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading users:', err);
+        document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading users</td></tr>';
+    });
+}
+
+function loadDocuments() {
+    fetch('/api/admin/documents/all', {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('documentsTableBody');
+        if (data.documents && data.documents.length > 0) {
+            tbody.innerHTML = data.documents.map(doc => `
+                <tr>
+                    <td>User #${doc.user_id}</td>
+                    <td>${doc.document_type.toUpperCase()}</td>
+                    <td>${doc.file_name}</td>
+                    <td>${new Date(doc.uploaded_at).toLocaleDateString()}</td>
+                    <td><span class="badge-status badge-${doc.status}">${doc.status.toUpperCase()}</span></td>
+                    <td>
+                        ${doc.status === 'pending' ? `
+                            <button onclick="approveDocument(${doc.id})" class="btn btn-sm btn-primary">Approve</button>
+                            <button onclick="rejectDocument(${doc.id})" class="btn btn-sm btn-outline">Reject</button>
+                        ` : ''}
+                        <button onclick="downloadDocument(${doc.id})" class="btn btn-sm btn-outline">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No documents found</td></tr>';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading documents:', err);
+        document.getElementById('documentsTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading documents</td></tr>';
+    });
+}
+
+function loadPayments(status = '') {
+    const url = status ? `/api/admin/payments/filter?status=${status}` : '/api/admin/payments/all';
+    fetch(url, {
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        const tbody = document.getElementById('paymentsTableBody');
+        if (data.payments && data.payments.length > 0) {
+            tbody.innerHTML = data.payments.map(payment => `
+                <tr>
+                    <td>#${payment.id}</td>
+                    <td>Institution #${payment.institution_id}</td>
+                    <td>Professional #${payment.professional_id}</td>
+                    <td>$${payment.amount.toFixed(2)}</td>
+                    <td><span class="badge-status badge-${payment.status}">${payment.status.toUpperCase()}</span></td>
+                    <td>${new Date(payment.created_at).toLocaleDateString()}</td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No payments found</td></tr>';
+        }
+    })
+    .catch(err => {
+        console.error('Error loading payments:', err);
+        document.getElementById('paymentsTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading payments</td></tr>';
+    });
+}
+
+function toggleUserStatus(userId, isActive) {
+    const action = isActive ? 'suspend' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} this user?`)) return;
+
+    fetch(`/api/admin/users/${userId}/${action}`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        loadUsers();
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function approveDocument(docId) {
+    fetch(`/api/admin/documents/${docId}/approve`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token')
+        }
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        loadDocuments();
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function rejectDocument(docId) {
+    const reason = prompt('Rejection reason:');
+    if (!reason) return;
+
+    fetch(`/api/admin/documents/${docId}/reject`, {
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + localStorage.getItem('token'),
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ reason })
+    })
+    .then(r => r.json())
+    .then(data => {
+        alert(data.message);
+        loadDocuments();
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function downloadDocument(docId) {
+    window.open(`/api/admin/documents/${docId}/download`, '_blank');
+}
+</script>
+{% endblock %}

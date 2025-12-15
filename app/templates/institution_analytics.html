@@ -1,0 +1,174 @@
+{% extends "institution_dashboard.html" %}
+{% block title %}Analytics - QGig{% endblock %}
+
+{% block dashboard_content %}
+<div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2rem; font-weight: 700; color: #111827;">Analytics & Insights</h1>
+        <a href="/api/institution/analytics/export" class="btn btn-primary" style="text-decoration: none;">
+            <i class="fas fa-download"></i> Export to CSV
+        </a>
+    </div>
+    
+    <!-- Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Total Interests</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #111827;">
+                {{ analytics.status_counts | sum(attribute='count') }}
+            </h3>
+            <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">Last 30 days</p>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Acceptance Rate</p>
+            <h3 style="font-size: 2rem; font-weight: 700; color: #10b981;">
+                {% set accepted = analytics.status_counts | selectattr('status', 'equalto', 'accepted') | map(attribute='count') | sum %}
+                {% set total = analytics.status_counts | sum(attribute='count') %}
+                {{ ((accepted / total * 100) | round(1)) if total > 0 else 0 }}%
+            </h3>
+            <p style="color: #10b981; font-size: 0.875rem; margin-top: 0.5rem;">
+                <i class="fas fa-arrow-up"></i> Professional engagement
+            </p>
+        </div>
+        
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <p style="color: #6b7280; font-size: 0.875rem; margin-bottom: 0.5rem;">Most Popular Gig</p>
+            <h3 style="font-size: 1.25rem; font-weight: 700; color: #111827;">
+                {% if analytics.top_gigs %}
+                    {{ analytics.top_gigs[0].title[:20] }}...
+                {% else %}
+                    N/A
+                {% endif %}
+            </h3>
+            <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">
+                {% if analytics.top_gigs %}
+                    {{ analytics.top_gigs[0].count }} interests
+                {% else %}
+                    No data
+                {% endif %}
+            </p>
+        </div>
+    </div>
+    
+    <!-- Charts Section -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Interest Trends Chart -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Interest Trends (Last 30 Days)</h2>
+            <canvas id="trendsChart" style="max-height: 300px;"></canvas>
+        </div>
+        
+        <!-- Status Distribution Chart -->
+        <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Interest Status Distribution</h2>
+            <canvas id="statusChart" style="max-height: 300px;"></canvas>
+        </div>
+    </div>
+    
+    <!-- Top Performing Gigs Table -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h2 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; color: #111827;">Top Performing Gigs</h2>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">RANK</th>
+                        <th style="padding: 1rem; text-align: left; font-weight: 600; color: #6b7280; font-size: 0.875rem;">GIG TITLE</th>
+                        <th style="padding: 1rem; text-align: right; font-weight: 600; color: #6b7280; font-size: 0.875rem;">INTERESTS</th>
+                        <th style="padding: 1rem; text-align: center; font-weight: 600; color: #6b7280; font-size: 0.875rem;">PERFORMANCE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for gig in analytics.top_gigs %}
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 1rem; color: #111827; font-weight: 600;">#{{ loop.index }}</td>
+                        <td style="padding: 1rem; color: #111827;">{{ gig.title }}</td>
+                        <td style="padding: 1rem; text-align: right; color: #111827; font-weight: 600;">{{ gig.count }}</td>
+                        <td style="padding: 1rem; text-align: center;">
+                            <div style="background: #dbeafe; height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: #1e40af; height: 100%; width: {{ (gig.count / analytics.top_gigs[0].count * 100) if analytics.top_gigs else 0 }}%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="padding: 2rem; text-align: center; color: #6b7280;">No gigs data available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+// Interest Trends Chart
+const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+const trendsData = {{ analytics.interests_by_day | tojson }};
+
+new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: trendsData.map(d => d.date),
+        datasets: [{
+            label: 'Interests',
+            data: trendsData.map(d => d.count),
+            borderColor: '#1e40af',
+            backgroundColor: 'rgba(30, 64, 175, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                }
+            }
+        }
+    }
+});
+
+// Status Distribution Chart
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+const statusData = {{ analytics.status_counts | tojson }};
+
+new Chart(statusCtx, {
+    type: 'doughnut',
+    data: {
+        labels: statusData.map(d => d.status.charAt(0).toUpperCase() + d.status.slice(1)),
+        datasets: [{
+            data: statusData.map(d => d.count),
+            backgroundColor: [
+                '#fbbf24', // pending - yellow
+                '#10b981', // accepted - green
+                '#ef4444'  // declined - red
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

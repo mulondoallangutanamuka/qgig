@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Payment Cancelled - QGig{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px; text-align: center; padding: 3rem 0;">
+    <div style="font-size: 5rem; color: #f59e0b; margin-bottom: 1.5rem;">
+        <i class="fas fa-exclamation-triangle"></i>
+    </div>
+    
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; color: #f59e0b;">
+        Payment Cancelled
+    </h1>
+    
+    <p style="font-size: 1.125rem; color: var(--gray-600); margin-bottom: 2rem;">
+        Your payment was cancelled. No charges have been made to your account.
+    </p>
+    
+    <div class="card" style="text-align: left; margin-bottom: 2rem;">
+        <div class="card-body">
+            <h3 style="margin-bottom: 1rem;">What would you like to do?</h3>
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--gray-200);">
+                    <i class="fas fa-redo" style="color: var(--primary-color); margin-right: 0.5rem;"></i>
+                    Try the payment again
+                </li>
+                <li style="padding: 0.75rem 0; border-bottom: 1px solid var(--gray-200);">
+                    <i class="fas fa-question-circle" style="color: var(--primary-color); margin-right: 0.5rem;"></i>
+                    Contact support if you're experiencing issues
+                </li>
+                <li style="padding: 0.75rem 0;">
+                    <i class="fas fa-list" style="color: var(--primary-color); margin-right: 0.5rem;"></i>
+                    Return to your gigs
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; justify-content: center;">
+        <a href="{{ url_for('web.my_gigs') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-list"></i> My Gigs
+        </a>
+        <a href="{{ url_for('web.home') }}" class="btn btn-outline btn-lg">
+            <i class="fas fa-home"></i> Home
+        </a>
+    </div>
+</div>
+{% endblock %}
