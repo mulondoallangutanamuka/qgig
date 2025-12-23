@@ -18,8 +18,11 @@ class User(Base):
     password = Column(String, nullable=False)
     role = Column(Enum(UserRole), nullable=False, index=True, default=UserRole.PROFESSIONAL)
     is_active = Column(Boolean, default=True, nullable=False, index=True)
+    password_reset_token_hash = Column(String(128), nullable=True, index=True)
+    password_reset_expires_at = Column(DateTime, nullable=True, index=True)
     professional = relationship("Professional", back_populates="user", uselist=False)
     institution = relationship("Institution", back_populates="user", uselist=False)
+    user_roles = relationship("UserRoleAssignment", back_populates="user")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

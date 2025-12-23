@@ -16,6 +16,7 @@ class Notification(Base):
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     job_interest_id = Column(Integer, ForeignKey("job_interests.id", ondelete="CASCADE"), nullable=True, index=True)
+    role_context = Column(String(50), nullable=True, index=True)  # 'professional', 'institution', or None for all roles
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     # Relationships
