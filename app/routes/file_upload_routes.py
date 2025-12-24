@@ -103,9 +103,15 @@ def upload_cv():
         ).first()
         
         if old_cv:
+            # Convert web path to filesystem path for deletion
+            old_file_path = old_cv.file_path
+            if old_file_path.startswith('/static/'):
+                old_file_path = old_file_path.replace('/static/', 'app/static/')
+                old_file_path = old_file_path.replace('/', os.sep)
+            
             # Delete old file from disk
-            if os.path.exists(old_cv.file_path):
-                FileUploadService.delete_file(old_cv.file_path)
+            if os.path.exists(old_file_path):
+                FileUploadService.delete_file(old_file_path)
             db.delete(old_cv)
         
         # Create document record
@@ -113,7 +119,7 @@ def upload_cv():
             user_id=session['user_id'],
             professional_id=professional.id,
             document_type=DocumentType.CV,
-            file_path=file_info['absolute_path'],
+            file_path=file_info['file_path'],
             file_name=file_info['file_name'],
             file_size=file_info['file_size'],
             mime_type=file_info['mime_type'],
@@ -122,7 +128,7 @@ def upload_cv():
         
         db.add(document)
         
-        # Also update legacy field
+        # Also update legacy field with web path
         professional.cv_file = file_info['file_path']
         
         db.commit()
@@ -173,7 +179,7 @@ def upload_certificate():
             user_id=session['user_id'],
             professional_id=professional.id,
             document_type=DocumentType.CERTIFICATE,
-            file_path=file_info['absolute_path'],
+            file_path=file_info['file_path'],
             file_name=file_info['file_name'],
             file_size=file_info['file_size'],
             mime_type=file_info['mime_type'],
@@ -231,9 +237,16 @@ def upload_profile_picture():
         ).first()
         
         if old_pic:
+            # Convert web path to filesystem path for deletion
+            old_file_path = old_pic.file_path
+            if old_file_path.startswith('/static/'):
+                # Convert web path to filesystem path
+                old_file_path = old_file_path.replace('/static/', 'app/static/')
+                old_file_path = old_file_path.replace('/', os.sep)
+            
             # Delete old file from disk
-            if os.path.exists(old_pic.file_path):
-                FileUploadService.delete_file(old_pic.file_path)
+            if os.path.exists(old_file_path):
+                FileUploadService.delete_file(old_file_path)
             db.delete(old_pic)
         
         # Create document record
@@ -241,7 +254,7 @@ def upload_profile_picture():
             user_id=session['user_id'],
             professional_id=professional.id,
             document_type=DocumentType.PROFILE_PICTURE,
-            file_path=file_info['absolute_path'],
+            file_path=file_info['file_path'],  # Use web path, not absolute_path
             file_name=file_info['file_name'],
             file_size=file_info['file_size'],
             mime_type=file_info['mime_type'],
@@ -250,7 +263,7 @@ def upload_profile_picture():
         
         db.add(document)
         
-        # Also update legacy field
+        # Also update legacy field with web path
         professional.profile_picture = file_info['file_path']
         
         db.commit()
