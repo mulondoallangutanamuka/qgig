@@ -1505,11 +1505,14 @@ def my_assignments():
 @web_blueprint.route('/profile')
 @login_required
 def profile():
+    from app.models.document import Document, DocumentType
     db = SessionLocal()
     
     user = db.query(User).filter(User.id == session['user_id']).first()
     
     profile = None
+    uploaded_files = []
+    
     if user.role == UserRole.PROFESSIONAL:
         profile = db.query(Professional).filter(Professional.user_id == user.id).first()
         # Create profile if it doesn't exist
@@ -1517,6 +1520,29 @@ def profile():
             profile = Professional(user_id=user.id)
             db.add(profile)
             db.commit()
+        
+        # Get uploaded documents
+        documents = db.query(Document).filter(Document.professional_id == profile.id).all()
+        for doc in documents:
+            uploaded_files.append({
+                'id': doc.id,
+                'type': doc.document_type.value,
+                'name': doc.file_name,
+                'size': doc.file_size,
+                'uploaded_at': doc.uploaded_at,
+                'status': doc.status.value,
+                'url': f'/api/professional/{profile.id}/download/{doc.id}'
+            })
+        
+        # Ensure profile picture is set from Document table if available
+        if not profile.profile_picture:
+            profile_pic_doc = db.query(Document).filter(
+                Document.professional_id == profile.id,
+                Document.document_type == DocumentType.PROFILE_PICTURE
+            ).first()
+            if profile_pic_doc:
+                profile.profile_picture = profile_pic_doc.file_path
+                
     elif user.role == UserRole.INSTITUTION:
         profile = db.query(Institution).filter(Institution.user_id == user.id).first()
         # Create profile if it doesn't exist
@@ -1565,7 +1591,8 @@ def profile():
                          profile=profile, 
                          average_rating=average_rating,
                          total_ratings=len(ratings),
-                         stats=stats)
+                         stats=stats,
+                         uploaded_files=uploaded_files)
 
 @web_blueprint.route('/profile/update', methods=['POST'])
 @login_required
