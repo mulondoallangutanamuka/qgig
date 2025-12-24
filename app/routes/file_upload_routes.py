@@ -12,6 +12,33 @@ from app.services.file_upload_service import FileUploadService
 from app.services.file_access_control import FileAccessControl
 import os
 
+
+def _get_active_role_from_session():
+    active_role = session.get('active_role') or session.get('role') or session.get('user_role')
+    if active_role:
+        return str(active_role)
+    return None
+
+
+def _user_has_role(db, user, role_name: str) -> bool:
+    if not user or not role_name:
+        return False
+
+    try:
+        from app.models.role import Role, UserRoleAssignment
+        role_row = db.query(Role).filter(Role.name == role_name).first()
+        if role_row:
+            assignment = db.query(UserRoleAssignment).filter(
+                UserRoleAssignment.user_id == user.id,
+                UserRoleAssignment.role_id == role_row.id
+            ).first()
+            if assignment:
+                return True
+    except Exception:
+        pass
+
+    return user.role and user.role.value == role_name
+
 def login_required(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -29,7 +56,12 @@ def role_required(role):
             db = SessionLocal()
             try:
                 user = db.query(User).filter(User.id == session['user_id']).first()
-                if not user or user.role.value != role:
+                active_role = _get_active_role_from_session()
+                if not active_role:
+                    return jsonify({'error': 'Forbidden'}), 403
+                if active_role != role:
+                    return jsonify({'error': 'Forbidden'}), 403
+                if not _user_has_role(db, user, active_role):
                     return jsonify({'error': 'Forbidden'}), 403
                 return f(*args, **kwargs)
             finally:
@@ -322,17 +354,44 @@ def download_document(professional_id, document_id):
         document = db.query(Document).filter(Document.id == document_id).first()
         if not document:
             return jsonify({'error': 'Document not found'}), 404
-        
+
+        def _resolve_document_path(doc_path: str) -> str:
+            if not doc_path:
+                return doc_path
+
+            # Already an absolute path on this machine
+            if os.path.isabs(doc_path):
+                return doc_path
+
+            # Handle legacy web paths stored in DB, e.g. /static/uploads/...
+            normalized = doc_path.replace('\\', '/')
+            if normalized.startswith('/'):
+                normalized = normalized[1:]
+
+            # If it starts with static/, it should live under <project>/app/static/...
+            if normalized.startswith('static/'):
+                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                return os.path.join(project_root, 'app', normalized.replace('/', os.sep))
+
+            # If it starts with app/static/... as a relative path
+            if normalized.startswith('app/static/'):
+                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                return os.path.join(project_root, normalized.replace('/', os.sep))
+
+            return doc_path
+
+        resolved_path = _resolve_document_path(document.file_path)
+
         # Check if file exists
-        if not os.path.exists(document.file_path):
-            return jsonify({'error': 'File not found on disk'}), 404
+        if not os.path.exists(resolved_path):
+            return jsonify({'error': 'File not found on disk. Please ask the professional to re-upload their document.'}), 404
         
         # Log access
         FileAccessControl.log_file_access(session['user_id'], document_id, True, db)
         
         # Send file
         return send_file(
-            document.file_path,
+            resolved_path,
             as_attachment=True,
             download_name=document.file_name,
             mimetype=document.mime_type

@@ -3,7 +3,7 @@ Web routes for rendering Jinja templates
 Handles all page rendering and form submissions for the web UI
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, send_from_directory, current_app
 from app.database import SessionLocal
 from app.models.user import User, UserRole
 from app.models.professional import Professional
@@ -16,10 +16,17 @@ from app.models.notification import Notification
 from app.models.job_interest import JobInterest, InterestStatus
 from app.models.message import Message
 from sqlalchemy import func, or_, desc, asc
+from sqlalchemy.orm import joinedload
 from functools import wraps
 import bcrypt
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
+import secrets
+import hashlib
+import smtplib
+import ssl
+from email.message import EmailMessage
+import logging
 from werkzeug.utils import secure_filename
 from app.services.file_upload_service import FileUploadService
 from app.services.file_access_control import FileAccessControl
@@ -33,11 +40,93 @@ def hash_password(password):
 def verify_password(password, hashed):
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
+
+def _send_email(to_email: str, subject: str, body: str) -> bool:
+    smtp_host = os.getenv('SMTP_HOST')
+    smtp_port = int(os.getenv('SMTP_PORT', '587'))
+    smtp_user = os.getenv('SMTP_USER') or os.getenv('SENDER_MAIL')
+    smtp_password = os.getenv('SMTP_PASSWORD') or os.getenv('PASSWORD')
+    smtp_from = os.getenv('SMTP_FROM') or smtp_user
+    use_tls = os.getenv('SMTP_USE_TLS', 'true').lower() in ['1', 'true', 'yes', 'on']
+    use_ssl = os.getenv('SMTP_USE_SSL', 'false').lower() in ['1', 'true', 'yes', 'on']
+
+    if not smtp_host or not smtp_from:
+        logging.getLogger(__name__).warning(
+            "SMTP not configured; missing SMTP_HOST or sender. SMTP_HOST=%s SMTP_FROM=%s", 
+            smtp_host, 
+            smtp_from
+        )
+        return False
+
+    if smtp_user and not smtp_password:
+        logging.getLogger(__name__).warning(
+            "SMTP missing password for user=%s (set SMTP_PASSWORD or PASSWORD)",
+            smtp_user
+        )
+        return False
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = smtp_from
+    msg['To'] = to_email
+    msg.set_content(body)
+
+    logging.getLogger(__name__).info(
+        "SMTP send attempt host=%s port=%s to=%s ssl=%s tls=%s from=%s user=%s",
+        smtp_host,
+        smtp_port,
+        to_email,
+        use_ssl,
+        use_tls,
+        smtp_from,
+        smtp_user
+    )
+
+    try:
+        if use_ssl:
+            context = ssl.create_default_context()
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context) as server:
+                if smtp_user and smtp_password:
+                    server.login(smtp_user, smtp_password)
+                server.send_message(msg)
+            logging.getLogger(__name__).info("SMTP email sent to=%s subject=%s", to_email, subject)
+            return True
+
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            if use_tls:
+                context = ssl.create_default_context()
+                server.starttls(context=context)
+            if smtp_user and smtp_password:
+                server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+        logging.getLogger(__name__).info("SMTP email sent to=%s subject=%s", to_email, subject)
+        return True
+    except Exception as e:
+        logging.getLogger(__name__).warning(
+            "SMTP send failed (host=%s port=%s to=%s ssl=%s tls=%s): %s",
+            smtp_host,
+            smtp_port,
+            to_email,
+            use_ssl,
+            use_tls,
+            str(e)
+        )
+        return False
+
 # Login required decorator
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
+            is_ajax = (
+                request.is_json or
+                request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                'application/json' in (request.headers.get('Accept') or '') or
+                request.path.startswith('/settings/')
+            )
+            if is_ajax:
+                return jsonify({'error': 'Unauthorized. Please log in again.'}), 401
+
             flash('Please login to access this page', 'warning')
             return redirect(url_for('web.login'))
         return f(*args, **kwargs)
@@ -49,14 +138,33 @@ def role_required(*roles):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             if 'user_id' not in session:
+                is_ajax = (
+                    request.is_json or
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                    'application/json' in (request.headers.get('Accept') or '') or
+                    request.path.startswith('/settings/')
+                )
+                if is_ajax:
+                    return jsonify({'error': 'Unauthorized. Please log in again.'}), 401
+
                 flash('Please login to access this page', 'warning')
                 return redirect(url_for('web.login'))
             
             db = SessionLocal()
             user = db.query(User).filter(User.id == session['user_id']).first()
             db.close()
-            
-            if user and user.role.value not in roles:
+
+            active_role = session.get('active_role') or session.get('role') or session.get('user_role')
+            if user and active_role and active_role not in roles:
+                is_ajax = (
+                    request.is_json or
+                    request.headers.get('X-Requested-With') == 'XMLHttpRequest' or
+                    'application/json' in (request.headers.get('Accept') or '') or
+                    request.path.startswith('/settings/')
+                )
+                if is_ajax:
+                    return jsonify({'error': 'Forbidden'}), 403
+
                 flash('You do not have permission to access this page', 'error')
                 return redirect(url_for('web.home'))
             
@@ -70,44 +178,201 @@ def inject_user():
     current_user = None
     unread_count = 0
     notification_count = 0
+    role_stats = {}
+    active_role = None
+    is_verified = False
+    completed_gigs_list = []
+    cv_boost = {}
     
     if 'user_id' in session:
         db = SessionLocal()
         current_user = db.query(User).filter(User.id == session['user_id']).first()
         
-        # Get unread notification count
+        # Get active role
+        active_role = session.get('active_role', current_user.role.value if current_user else None)
+        
+        # Get unread notification count filtered by active role
         notification_count = db.query(Notification).filter(
             Notification.user_id == session['user_id'],
-            Notification.is_read == False
+            Notification.is_read == False,
+            or_(
+                Notification.role_context == active_role,
+                Notification.role_context == None  # Include notifications for all roles
+            )
         ).count()
         unread_count = notification_count
         
-        # Add profile picture from Professional or Institution profile
+        # Get role-specific data and profile picture
         if current_user:
-            if current_user.role == UserRole.PROFESSIONAL:
-                prof = db.query(Professional).filter(Professional.user_id == current_user.id).first()
-                if prof:
-                    # Get profile picture document
-                    profile_pic = db.query(Document).filter(
-                        Document.professional_id == prof.id,
-                        Document.document_type == DocumentType.PROFILE_PICTURE
-                    ).first()
-                    current_user.profile_picture = profile_pic.file_path if profile_pic else None
-                else:
-                    current_user.profile_picture = None
-            elif current_user.role == UserRole.INSTITUTION:
-                inst = db.query(Institution).filter(Institution.user_id == current_user.id).first()
-                current_user.profile_picture = None  # Institutions don't have profile pictures yet
+            # Get professional profile
+            prof = db.query(Professional).filter(Professional.user_id == current_user.id).first()
+            if prof:
+                profile_pic = db.query(Document).filter(
+                    Document.professional_id == prof.id,
+                    Document.document_type == DocumentType.PROFILE_PICTURE
+                ).first()
+                current_user.profile_picture = profile_pic.file_path if profile_pic else None
+
+                requires_registration = (prof.profession_category in ['Health', 'Formal']) if prof.profession_category else False
+                is_verified = bool(requires_registration and prof.registration_number and prof.issuing_body)
             else:
                 current_user.profile_picture = None
+            
+            # Get institution profile
+            inst = db.query(Institution).filter(Institution.user_id == current_user.id).first()
+            
+            # Collect role-specific stats based on active role
+            if active_role == 'professional' and prof:
+                # Professional stats
+                interested_gigs = db.query(GigInterest).filter(
+                    GigInterest.professional_id == prof.id
+                ).count()
+                
+                assigned_gigs = db.query(Job).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.ASSIGNED
+                ).count()
+                
+                completed_gigs = db.query(Job).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED
+                ).count()
+                
+                total_earned = db.query(func.sum(Payment.amount)).filter(
+                    Payment.professional_id == prof.id,
+                    Payment.status == TransactionStatus.COMPLETED
+                ).scalar() or 0
+                
+                completed_gigs_list = db.query(Job).options(
+                    joinedload(Job.institution)
+                ).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED
+                ).order_by(desc(Job.updated_at)).limit(10).all()
+
+                average_rating, total_ratings = db.query(
+                    func.avg(Rating.rating),
+                    func.count(Rating.id)
+                ).filter(Rating.professional_id == prof.id).first()
+
+                repeat_clients = db.query(func.count(func.distinct(Job.institution_id))).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED
+                ).scalar() or 0
+
+                top_sectors = db.query(Job.sector, func.count(Job.id)).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED,
+                    Job.sector.isnot(None),
+                    Job.sector != ''
+                ).group_by(Job.sector).order_by(desc(func.count(Job.id))).limit(3).all()
+
+                top_job_types = db.query(Job.job_type, func.count(Job.id)).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED,
+                    Job.job_type.isnot(None),
+                    Job.job_type != ''
+                ).group_by(Job.job_type).order_by(desc(func.count(Job.id))).limit(3).all()
+
+                total_hours = db.query(func.sum(Job.duration_hours)).filter(
+                    Job.assigned_professional_id == prof.id,
+                    Job.status == JobStatus.COMPLETED
+                ).scalar() or 0
+
+                cv_boost = {
+                    'average_rating': float(average_rating) if average_rating is not None else 0,
+                    'total_ratings': int(total_ratings or 0),
+                    'repeat_clients': int(repeat_clients),
+                    'top_sectors': [{'name': s, 'count': int(c)} for s, c in top_sectors],
+                    'top_job_types': [{'name': t, 'count': int(c)} for t, c in top_job_types],
+                    'total_hours': float(total_hours or 0)
+                }
+                
+                role_stats = {
+                    'interested_gigs': interested_gigs,
+                    'assigned_gigs': assigned_gigs,
+                    'completed_gigs': completed_gigs,
+                    'total_earned': total_earned,
+                    'profile_completion': _calculate_profile_completion(prof)
+                }
+                
+            elif active_role == 'institution' and inst:
+                # Institution stats
+                open_gigs = db.query(Job).filter(
+                    Job.institution_id == inst.id,
+                    Job.status == JobStatus.OPEN
+                ).count()
+                
+                assigned_gigs = db.query(Job).filter(
+                    Job.institution_id == inst.id,
+                    Job.status == JobStatus.ASSIGNED
+                ).count()
+                
+                completed_gigs = db.query(Job).filter(
+                    Job.institution_id == inst.id,
+                    Job.status == JobStatus.COMPLETED
+                ).count()
+                
+                pending_interests = db.query(GigInterest).join(Job).filter(
+                    Job.institution_id == inst.id,
+                    Job.status == JobStatus.OPEN
+                ).count()
+                
+                total_spent = db.query(func.sum(Payment.amount)).filter(
+                    Payment.institution_id == inst.id,
+                    Payment.status == TransactionStatus.COMPLETED
+                ).scalar() or 0
+                
+                role_stats = {
+                    'open_gigs': open_gigs,
+                    'assigned_gigs': assigned_gigs,
+                    'completed_gigs': completed_gigs,
+                    'pending_interests': pending_interests,
+                    'total_spent': total_spent,
+                    'profile_completion': _calculate_institution_profile_completion(inst)
+                }
         
         db.close()
     
     return dict(
         current_user=current_user,
         unread_count=unread_count,
-        notification_count=notification_count
+        notification_count=notification_count,
+        active_role=active_role,
+        role_stats=role_stats,
+        is_verified=is_verified,
+        completed_gigs_list=completed_gigs_list,
+        cv_boost=cv_boost
     )
+
+
+def _calculate_profile_completion(prof):
+    """Calculate professional profile completion percentage"""
+    fields = [
+        prof.full_name,
+        prof.phone_number,
+        prof.skills,
+        prof.bio,
+        prof.location,
+        prof.hourly_rate or prof.daily_rate,
+        prof.education,
+        prof.experience
+    ]
+    completed = sum(1 for field in fields if field)
+    return int((completed / len(fields)) * 100)
+
+
+def _calculate_institution_profile_completion(inst):
+    """Calculate institution profile completion percentage"""
+    fields = [
+        inst.institution_name,
+        inst.description,
+        inst.contact_email,
+        inst.contact_phone,
+        inst.location
+    ]
+    completed = sum(1 for field in fields if field)
+    return int((completed / len(fields)) * 100)
 
 # ===== Authentication Routes =====
 
@@ -142,6 +407,38 @@ def home():
     finally:
         db.close()
 
+
+@web_blueprint.route('/professional/<int:professional_id>')
+@login_required
+@role_required('professional', 'institution')
+def professional_profile_view(professional_id):
+    """View a professional profile (role-aware redirect)."""
+    active_role = session.get('active_role')
+    
+    # Institutions view professionals via the institution dashboard history view
+    if active_role == 'institution':
+        return redirect(url_for('web.professional_history', professional_id=professional_id))
+
+    # Professionals can only view their own profile via /profile
+    if active_role == 'professional':
+        db = SessionLocal()
+        try:
+            professional = db.query(Professional).filter(Professional.id == professional_id).first()
+            if not professional:
+                flash('Professional not found', 'error')
+                return redirect(url_for('web.profile'))
+
+            if professional.user_id != session.get('user_id'):
+                from flask import abort
+                abort(403)
+
+            return redirect(url_for('web.profile'))
+        finally:
+            db.close()
+
+    from flask import abort
+    abort(403)
+
 @web_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -160,17 +457,18 @@ def login():
             session['user_id'] = user.id
             session['user_email'] = user.email
             session['user_role'] = user.role.value
+            session['active_role'] = user.role.value
             
             flash(f'Welcome back, {email.split("@")[0]}!', 'success')
             db.close()
             
-            # Redirect based on role
-            if user.role == UserRole.ADMIN:
+            # Redirect based on active_role (not user.role)
+            active_role = session.get('active_role', user.role.value)
+            if active_role == 'admin':
                 return redirect(url_for('web.admin_dashboard'))
-            elif user.role == UserRole.INSTITUTION:
-                return redirect(url_for('web.institution_dashboard'))
             else:
-                return redirect(url_for('web.browse_gigs'))
+                # Use unified dashboard for professional and institution roles
+                return redirect(url_for('web.dashboard'))
         else:
             flash('Invalid email or password', 'error')
             db.close()
@@ -183,49 +481,64 @@ def signup():
         email = request.form.get('email')
         password = request.form.get('password')
         confirm_password = request.form.get('confirm_password')
-        role = request.form.get('role')
         
         if password != confirm_password:
             flash('Passwords do not match', 'error')
             return redirect(url_for('web.signup'))
         
-        if role not in ['professional', 'institution']:
-            flash('Invalid account type', 'error')
-            return redirect(url_for('web.signup'))
-        
         db = SessionLocal()
         
-        # Check if user exists
-        existing_user = db.query(User).filter(User.email == email).first()
-        if existing_user:
-            flash('Email already registered', 'error')
+        try:
+            # Check if user exists
+            existing_user = db.query(User).filter(User.email == email).first()
+            if existing_user:
+                flash('Email already registered', 'error')
+                db.close()
+                return redirect(url_for('web.signup'))
+            
+            # Create user with default professional role (for backward compatibility)
+            user = User(
+                email=email,
+                password=hash_password(password),
+                role=UserRole.PROFESSIONAL,
+                is_active=True
+            )
+            db.add(user)
+            db.flush()
+            
+            # Create BOTH profiles (multi-role support)
+            professional_profile = Professional(user_id=user.id)
+            institution_profile = Institution(user_id=user.id)
+            db.add(professional_profile)
+            db.add(institution_profile)
+            db.flush()
+            
+            # Bootstrap into new roles tables
+            from app.models.role import Role, UserRoleAssignment
+            
+            # Ensure professional and institution roles exist
+            for role_name in ['professional', 'institution']:
+                role_row = db.query(Role).filter(Role.name == role_name).first()
+                if not role_row:
+                    role_row = Role(name=role_name, is_switchable=True)
+                    db.add(role_row)
+                    db.flush()
+                
+                # Assign role to user
+                assignment = UserRoleAssignment(user_id=user.id, role_id=role_row.id)
+                db.add(assignment)
+            
+            db.commit()
+            
+            flash('Account created successfully! You can switch between Professional and Institution roles after login.', 'success')
+            db.close()
+            
+            return redirect(url_for('web.login'))
+        except Exception as e:
+            db.rollback()
+            flash(f'Error creating account: {str(e)}', 'error')
             db.close()
             return redirect(url_for('web.signup'))
-        
-        # Create user
-        user = User(
-            email=email,
-            password=hash_password(password),
-            role=UserRole.PROFESSIONAL if role == 'professional' else UserRole.INSTITUTION,
-            is_active=True
-        )
-        db.add(user)
-        db.flush()
-        
-        # Create profile based on role
-        if role == 'professional':
-            profile = Professional(user_id=user.id)
-            db.add(profile)
-        else:
-            profile = Institution(user_id=user.id)
-            db.add(profile)
-        
-        db.commit()
-        
-        flash('Account created successfully! Please login.', 'success')
-        db.close()
-        
-        return redirect(url_for('web.login'))
     
     return render_template('signup.html')
 
@@ -239,11 +552,80 @@ def logout():
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email')
-        # TODO: Implement password reset email
-        flash('Password reset instructions have been sent to your email', 'success')
+
+        db = SessionLocal()
+        try:
+            user = db.query(User).filter(User.email == email).first()
+
+            # Always show the same message to avoid leaking whether an email exists
+            flash('If an account exists for that email, a reset link has been sent.', 'success')
+
+            if user and user.is_active:
+                token = secrets.token_urlsafe(32)
+                token_hash = hashlib.sha256((token + current_app.secret_key).encode('utf-8')).hexdigest()
+                user.password_reset_token_hash = token_hash
+                user.password_reset_expires_at = datetime.utcnow() + timedelta(hours=1)
+                db.commit()
+
+                reset_url = url_for('web.reset_password', token=token, _external=True)
+                email_subject = 'Reset your QGig password'
+                email_body = (
+                    'We received a request to reset your password.\n\n'
+                    f'Reset link: {reset_url}\n\n'
+                    'This link expires in 1 hour. If you did not request this, you can ignore this email.'
+                )
+
+                sent = _send_email(email, email_subject, email_body)
+                if not sent:
+                    current_app.logger.info(f"Password reset link for {email}: {reset_url}")
+        finally:
+            db.close()
+
         return redirect(url_for('web.login'))
     
     return render_template('forgot_password.html')
+
+
+@web_blueprint.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    token_hash = hashlib.sha256((token + current_app.secret_key).encode('utf-8')).hexdigest()
+
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(
+            User.password_reset_token_hash == token_hash,
+            User.password_reset_expires_at != None,
+            User.password_reset_expires_at > datetime.utcnow()
+        ).first()
+
+        if not user:
+            flash('This reset link is invalid or has expired.', 'error')
+            return redirect(url_for('web.forgot_password'))
+
+        if request.method == 'POST':
+            new_password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+
+            if not new_password:
+                flash('Password is required.', 'error')
+                return render_template('reset_password.html', token=token)
+
+            if new_password != confirm_password:
+                flash('Passwords do not match.', 'error')
+                return render_template('reset_password.html', token=token)
+
+            user.password = hash_password(new_password)
+            user.password_reset_token_hash = None
+            user.password_reset_expires_at = None
+            user.updated_at = datetime.utcnow()
+            db.commit()
+
+            flash('Your password has been reset. You can now log in.', 'success')
+            return redirect(url_for('web.login'))
+
+        return render_template('reset_password.html', token=token)
+    finally:
+        db.close()
 
 # ===== Gig Routes =====
 
@@ -904,6 +1286,40 @@ def view_interested(gig_id):
     finally:
         db.close()
 
+@web_blueprint.route('/jobs/<int:gig_id>/assign/<int:professional_id>', methods=['POST'])
+@login_required
+@role_required('institution')
+def assign_gig_web(gig_id, professional_id):
+    db = SessionLocal()
+    try:
+        institution = db.query(Institution).filter(Institution.user_id == session['user_id']).first()
+        if not institution:
+            return jsonify({'error': 'Institution profile not found'}), 404
+
+        gig = db.query(Job).filter(Job.id == gig_id, Job.institution_id == institution.id).first()
+        if not gig:
+            return jsonify({'error': 'Gig not found or unauthorized'}), 404
+
+        if gig.status != JobStatus.OPEN:
+            return jsonify({'error': 'Gig is not open'}), 400
+
+        professional = db.query(Professional).filter(Professional.id == professional_id).first()
+        if not professional:
+            return jsonify({'error': 'Professional not found'}), 404
+
+        gig.assigned_professional_id = professional_id
+        gig.status = JobStatus.ASSIGNED
+        gig.updated_at = datetime.utcnow()
+
+        db.commit()
+
+        return jsonify({'message': 'Gig assigned successfully'}), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
 @web_blueprint.route('/gigs/<int:gig_id>/express-interest', methods=['POST'])
 @login_required
 @role_required('professional')
@@ -953,7 +1369,8 @@ def express_interest(gig_id):
             user_id=gig.institution.user_id,
             title="New Interest in Your Job",
             message=f"{professional.full_name} has expressed interest in your job: {gig.title}",
-            job_interest_id=interest.id  # Now this has a value!
+            job_interest_id=interest.id,  # Now this has a value!
+            role_context='institution'  # This notification is for institution role
         )
         db.add(notification)
         
@@ -1260,15 +1677,26 @@ def update_profile():
 @web_blueprint.route('/notifications')
 @login_required
 def notifications():
+    """Display notifications filtered by active role"""
     from sqlalchemy.orm import joinedload
     from app.models.document import Document, DocumentType
     db = SessionLocal()
     try:
+        active_role = session.get('active_role')
+        if not active_role and 'user_id' in session:
+            user = db.query(User).filter(User.id == session['user_id']).first()
+            active_role = user.role.value if user else None
+        
+        # Filter notifications by active role
         user_notifications = db.query(Notification).options(
             joinedload(Notification.job_interest).joinedload(JobInterest.job),
             joinedload(Notification.job_interest).joinedload(JobInterest.professional)
         ).filter(
-            Notification.user_id == session['user_id']
+            Notification.user_id == session['user_id'],
+            or_(
+                Notification.role_context == active_role,
+                Notification.role_context == None  # Include notifications for all roles
+            )
         ).order_by(desc(Notification.created_at)).all()
         
         # Enrich notifications with professional profile and documents
@@ -1277,13 +1705,17 @@ def notifications():
             notif_data = {
                 'notification': notif,
                 'profile': None,
-                'documents': {'cv': None, 'certificates': []}
+                'documents': {'cv': None, 'certificates': []},
+                'is_verified': False
             }
             
             # If this is a job interest notification, get professional data
             if notif.job_interest_id and notif.job_interest and notif.job_interest.professional:
                 professional = notif.job_interest.professional
                 notif_data['profile'] = professional
+
+                requires_registration = (professional.profession_category in ['Health', 'Formal']) if professional.profession_category else False
+                notif_data['is_verified'] = bool(requires_registration and professional.registration_number and professional.issuing_body)
                 
                 # Get CV
                 cv_doc = db.query(Document).filter(
@@ -1309,36 +1741,57 @@ def notifications():
 @login_required
 def payments_history():
     db = SessionLocal()
-    
-    user = db.query(User).filter(User.id == session['user_id']).first()
-    
-    payments = []
-    if user.role == UserRole.PROFESSIONAL:
-        professional = db.query(Professional).filter(Professional.user_id == user.id).first()
-        if professional:
-            payments = db.query(Payment).filter(Payment.professional_id == professional.id).order_by(desc(Payment.created_at)).all()
-    elif user.role == UserRole.INSTITUTION:
-        institution = db.query(Institution).filter(Institution.user_id == user.id).first()
-        if institution:
-            payments = db.query(Payment).filter(Payment.institution_id == institution.id).order_by(desc(Payment.created_at)).all()
-    
-    stats = {
-        'total_payments': len(payments),
-        'completed': len([p for p in payments if p.status == TransactionStatus.COMPLETED]),
-        'pending': len([p for p in payments if p.status == TransactionStatus.PENDING]),
-        'total_amount': sum(p.amount for p in payments if p.status == TransactionStatus.COMPLETED)
-    }
-    
-    db.close()
-    
-    return render_template('payments.html', payments=payments, stats=stats)
+
+    from sqlalchemy.orm import joinedload
+
+    try:
+        user = db.query(User).filter(User.id == session['user_id']).first()
+
+        active_role = session.get('active_role', user.role.value if user else None)
+
+        payments = []
+        payment_query = db.query(Payment).options(
+            joinedload(Payment.gig),
+            joinedload(Payment.institution),
+            joinedload(Payment.professional).joinedload(Professional.user)
+        )
+
+        if user and active_role == 'professional':
+            professional = db.query(Professional).filter(Professional.user_id == user.id).first()
+            if professional:
+                payments = payment_query.filter(
+                    Payment.professional_id == professional.id
+                ).order_by(desc(Payment.created_at)).all()
+        elif user and active_role == 'institution':
+            institution = db.query(Institution).filter(Institution.user_id == user.id).first()
+            if institution:
+                payments = payment_query.filter(
+                    Payment.institution_id == institution.id
+                ).order_by(desc(Payment.created_at)).all()
+
+        stats = {
+            'total_payments': len(payments),
+            'completed': len([p for p in payments if p.status == TransactionStatus.COMPLETED]),
+            'pending': len([p for p in payments if p.status == TransactionStatus.PENDING]),
+            'total_amount': sum(p.amount for p in payments if p.status == TransactionStatus.COMPLETED)
+        }
+
+        return render_template('payments.html', payments=payments, stats=stats)
+    finally:
+        db.close()
 
 @web_blueprint.route('/payments/<int:payment_id>')
 @login_required
 def payment_detail(payment_id):
     db = SessionLocal()
     try:
-        payment = db.query(Payment).filter(Payment.id == payment_id).first()
+        from sqlalchemy.orm import joinedload
+
+        payment = db.query(Payment).options(
+            joinedload(Payment.gig),
+            joinedload(Payment.institution),
+            joinedload(Payment.professional).joinedload(Professional.user)
+        ).filter(Payment.id == payment_id).first()
         if not payment:
             flash('Payment not found', 'error')
             return redirect(url_for('web.payments_history'))
@@ -1456,7 +1909,8 @@ def complete_job(gig_id):
         notification = Notification(
             user_id=institution_user.id,
             title="Job Completed",
-            message=f"The job '{gig.title}' has been marked as completed by {professional.full_name}."
+            message=f"The job '{gig.title}' has been marked as completed by {professional.full_name}.",
+            role_context='institution'  # This notification is for institution role
         )
         db.add(notification)
         db.commit()
@@ -1528,10 +1982,13 @@ def rate_job(gig_id):
             
             # Create notification for rated user
             rated_user = db.query(User).filter(User.id == rated_user_id).first()
+            # Determine role context based on who is being rated
+            rated_role = 'professional' if rated_user.id == gig.assigned_professional.user_id else 'institution'
             notification = Notification(
                 user_id=rated_user_id,
                 title="New Rating Received",
-                message=f"You received a {rating_value}-star rating for the job '{gig.title}'."
+                message=f"You received a {rating_value}-star rating for the job '{gig.title}'.",
+                role_context=rated_role
             )
             db.add(notification)
             db.commit()
@@ -1553,6 +2010,7 @@ def admin_dashboard():
     db = SessionLocal()
     try:
         from datetime import timedelta
+        from sqlalchemy.orm import joinedload
         
         # Get comprehensive analytics
         total_users = db.query(User).count()
@@ -1648,8 +2106,26 @@ def admin_dashboard():
                 'revenue': float(dr.revenue)
             } for dr in daily_revenue]
         }
-        
-        return render_template('admin_dashboard_complete.html', analytics=analytics)
+
+        # Tab data for server-rendered admin dashboard (avoid JWT-only API calls)
+        users = db.query(User).order_by(desc(User.created_at)).limit(200).all()
+        documents = db.query(Document).options(joinedload(Document.user)).order_by(desc(Document.uploaded_at)).limit(200).all()
+        latest_payment_per_gig = db.query(
+            Payment.gig_id.label('gig_id'),
+            func.max(Payment.created_at).label('max_created_at')
+        ).group_by(Payment.gig_id).subquery()
+
+        payments = db.query(Payment).options(
+            joinedload(Payment.gig),
+            joinedload(Payment.institution),
+            joinedload(Payment.professional)
+        ).join(
+            latest_payment_per_gig,
+            (Payment.gig_id == latest_payment_per_gig.c.gig_id) &
+            (Payment.created_at == latest_payment_per_gig.c.max_created_at)
+        ).order_by(desc(Payment.created_at)).limit(200).all()
+
+        return render_template('admin_dashboard_complete.html', analytics=analytics, users=users, documents=documents, payments=payments)
     finally:
         db.close()
 
@@ -1682,12 +2158,16 @@ def approve_document(document_id):
         
         document.status = DocumentStatus.APPROVED
         document.updated_at = datetime.utcnow()
+        document.is_verified = 1
+        document.reviewed_at = datetime.utcnow()
+        document.reviewed_by = session.get('user_id')
         
         # Notify user
         notification = Notification(
             user_id=document.user_id,
             title="Document Approved",
-            message=f"Your {document.document_type.value} has been approved."
+            message=f"Your {document.document_type.value} has been approved.",
+            role_context='professional'  # Document approvals are for professionals
         )
         db.add(notification)
         db.commit()
@@ -1713,12 +2193,16 @@ def reject_document(document_id):
         
         document.status = DocumentStatus.REJECTED
         document.updated_at = datetime.utcnow()
+        document.is_verified = 0
+        document.reviewed_at = datetime.utcnow()
+        document.reviewed_by = session.get('user_id')
         
         # Notify user
         notification = Notification(
             user_id=document.user_id,
             title="Document Rejected",
-            message=f"Your {document.document_type.value} was rejected. Reason: {reason}"
+            message=f"Your {document.document_type.value} was rejected. Reason: {reason}",
+            role_context='professional'  # Document rejections are for professionals
         )
         db.add(notification)
         db.commit()
@@ -1929,8 +2413,9 @@ def professional_interested_page():
     try:
         professional = db.query(Professional).filter(Professional.user_id == session['user_id']).first()
         if not professional:
-            flash('Please complete your professional profile first', 'warning')
+            flash('Professional profile not found', 'error')
             return redirect(url_for('web.profile'))
+
         return render_template('professional_interested.html', professional_id=professional.id)
     finally:
         db.close()
@@ -1999,7 +2484,8 @@ def show_job_interest(job_id):
             user_id=institution_user.id,
             title=f"New Interest in Your Gig",
             message=f"{prof_username} has shown interest in your gig: {job.title}. Posted at {datetime.utcnow().strftime('%b %d, %Y at %I:%M %p')}",
-            job_interest_id=interest.id
+            job_interest_id=interest.id,
+            role_context='institution'  # This notification is for institution role
         )
         db.add(notification)
         
@@ -2057,7 +2543,7 @@ def show_job_interest(job_id):
 @login_required
 @role_required('institution')
 def accept_interest(interest_id):
-    """Institution accepts a professional's interest"""
+    """Institution accepts a professional interest"""
     from flask import jsonify
     db = SessionLocal()
     
@@ -2108,6 +2594,7 @@ def accept_interest(interest_id):
                 user_id=declined_user.id,
                 title="Interest Declined",
                 message=f"Your interest in the gig '{job.title}' has been DECLINED.",
+                role_context='professional',  # This notification is for professional role
                 job_interest_id=other_interest.id
             )
             db.add(declined_notification)
@@ -2151,6 +2638,7 @@ def accept_interest(interest_id):
             user_id=accepted_user.id,
             title="Interest Accepted!",
             message=f"Your interest in the gig '{job.title}' has been ACCEPTED. A message from the institution is waiting for you.",
+            role_context='professional',  # This notification is for professional role
             job_interest_id=interest.id
         )
         db.add(accepted_notification)
@@ -2194,7 +2682,7 @@ def accept_interest(interest_id):
 @login_required
 @role_required('institution')
 def decline_interest(interest_id):
-    """Institution declines a professional's interest"""
+    """Institution declines a professional interest"""
     from flask import jsonify
     db = SessionLocal()
     
@@ -2230,7 +2718,8 @@ def decline_interest(interest_id):
             user_id=professional_user.id,
             title="Interest Declined",
             message=f"Your interest in the gig '{job.title}' has been DECLINED.",
-            job_interest_id=interest.id
+            job_interest_id=interest.id,
+            role_context='professional'  # This notification is for professional role
         )
         db.add(notification)
         
@@ -2293,7 +2782,8 @@ def cancel_interest(job_id):
             user_id=institution_user_id,
             title="Interest Withdrawn",
             message=f"{prof_username} has withdrawn their interest in your job: {job.title}",
-            job_interest_id=None
+            job_interest_id=None,
+            role_context='institution'  # This notification is for institution role
         )
         db.add(notification)
         
@@ -2350,14 +2840,49 @@ def get_notifications():
     finally:
         db.close()
 
-# Mark notification as read
+# Mark all notifications as read
+@web_blueprint.route('/api/notifications/mark-all-read', methods=['POST'])
+@login_required
+def mark_all_notifications_read():
+    """Mark all unread notifications as read for the current active role"""
+    from flask import jsonify
+    db = SessionLocal()
+    try:
+        active_role = session.get('active_role')
+        if not active_role and 'user_id' in session:
+            user = db.query(User).filter(User.id == session['user_id']).first()
+            active_role = user.role.value if user else None
+        
+        # Update all unread notifications for this user and role
+        updated = db.query(Notification).filter(
+            Notification.user_id == session['user_id'],
+            Notification.is_read == False,
+            or_(
+                Notification.role_context == active_role,
+                Notification.role_context == None
+            )
+        ).update({Notification.is_read: True}, synchronize_session=False)
+        
+        db.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Marked {updated} notification(s) as read',
+            'count': updated
+        }), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+# Mark single notification as read
 @web_blueprint.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
 @login_required
 def mark_notification_read(notification_id):
-    """Mark a notification as read"""
+    """Mark a single notification as read"""
     from flask import jsonify
     db = SessionLocal()
-    
     try:
         notification = db.query(Notification).filter(
             Notification.id == notification_id,
@@ -2370,7 +2895,13 @@ def mark_notification_read(notification_id):
         notification.is_read = True
         db.commit()
         
-        return jsonify({'success': True})
+        return jsonify({
+            'success': True,
+            'message': 'Notification marked as read'
+        }), 200
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
     finally:
         db.close()
 
@@ -2723,7 +3254,7 @@ def respond_to_notification(notification_id):
 @login_required
 @role_required('institution')
 def gig_interest_respond(interest_id):
-    """Institution accepts or rejects a professional's interest"""
+    """Institution accepts or rejects a professional interest"""
     data = request.get_json()
     action = data.get('action')
     
@@ -2860,6 +3391,18 @@ def respond_to_gig_interest(interest_id, action):
         return jsonify({'error': str(e)}), 500
     finally:
         db.close()
+
+# ============================================================================
+# ============================================================================
+# UNIFIED DASHBOARD ROUTE (Role-Aware)
+# ============================================================================
+
+@web_blueprint.route('/dashboard')
+@login_required
+def dashboard():
+    """Unified dashboard that adapts based on active_role"""
+    return render_template('unified_dashboard.html')
+
 
 # ============================================================================
 # INSTITUTION ADMIN DASHBOARD ROUTES
@@ -3041,6 +3584,116 @@ def institution_analytics():
     finally:
         db.close()
 
+
+@web_blueprint.route('/api/institution/analytics/export')
+@login_required
+@role_required('institution')
+def export_institution_analytics_csv():
+    db = SessionLocal()
+    try:
+        institution = db.query(Institution).filter(Institution.user_id == session['user_id']).first()
+        if not institution:
+            from flask import jsonify
+            return jsonify({'error': 'Institution profile not found'}), 404
+
+        from io import StringIO
+        import csv
+        from flask import Response
+        from sqlalchemy.orm import aliased
+        from sqlalchemy import and_
+        from app.models.payment import Payment
+        from app.models.user import User
+
+        latest_payment_ts = db.query(
+            Payment.gig_id.label('gig_id'),
+            Payment.professional_id.label('professional_id'),
+            Payment.institution_id.label('institution_id'),
+            func.max(Payment.created_at).label('max_created_at')
+        ).filter(
+            Payment.institution_id == institution.id
+        ).group_by(
+            Payment.gig_id,
+            Payment.professional_id,
+            Payment.institution_id
+        ).subquery()
+
+        LatestPayment = aliased(Payment)
+
+        rows = db.query(
+            JobInterest,
+            Job,
+            Professional,
+            User,
+            LatestPayment
+        ).join(
+            Job, Job.id == JobInterest.job_id
+        ).join(
+            Professional, Professional.id == JobInterest.professional_id
+        ).join(
+            User, User.id == Professional.user_id
+        ).outerjoin(
+            latest_payment_ts,
+            and_(
+                latest_payment_ts.c.gig_id == JobInterest.job_id,
+                latest_payment_ts.c.professional_id == JobInterest.professional_id,
+                latest_payment_ts.c.institution_id == institution.id
+            )
+        ).outerjoin(
+            LatestPayment,
+            and_(
+                LatestPayment.gig_id == latest_payment_ts.c.gig_id,
+                LatestPayment.professional_id == latest_payment_ts.c.professional_id,
+                LatestPayment.institution_id == latest_payment_ts.c.institution_id,
+                LatestPayment.created_at == latest_payment_ts.c.max_created_at
+            )
+        ).filter(
+            Job.institution_id == institution.id
+        ).order_by(
+            desc(JobInterest.created_at)
+        ).all()
+
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            'date',
+            'gig_title',
+            'professional_name',
+            'email',
+            'telephone_no',
+            'payment_paid',
+            'payment_status'
+        ])
+
+        for interest, job, professional, user, payment in rows:
+            payment_amount = ''
+            payment_status = ''
+            if payment:
+                payment_amount = payment.amount
+                payment_status = payment.status.value if payment.status else ''
+            else:
+                payment_status = 'unpaid'
+
+            writer.writerow([
+                interest.created_at.strftime('%Y-%m-%d %H:%M:%S') if interest.created_at else '',
+                job.title if job else '',
+                professional.full_name or '',
+                user.email if user else '',
+                professional.phone_number or '',
+                payment_amount,
+                payment_status
+            ])
+
+        csv_data = output.getvalue()
+        filename = f"institution_analytics_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+
+        return Response(
+            csv_data,
+            mimetype='text/csv',
+            headers={'Content-Disposition': f'attachment; filename={filename}'}
+        )
+    finally:
+        db.close()
+
 @web_blueprint.route('/institution/users')
 @login_required
 @role_required('institution')
@@ -3067,10 +3720,21 @@ def institution_users():
         
         professionals_list = []
         for prof, total, accepted, rejected, last_activity in professionals:
+            # Defensive fallbacks (templates often do name[0] for avatars)
+            email = None
+            try:
+                email = prof.user.email if prof.user else None
+            except Exception:
+                email = None
+
+            name = (prof.full_name or (email or '')).strip() if prof else ''
+            if not name:
+                name = 'Unknown'
+
             professionals_list.append({
                 'id': prof.id,
-                'name': prof.full_name,
-                'email': prof.user.email,
+                'name': name,
+                'email': email or '',
                 'total_interests': total,
                 'accepted_count': accepted or 0,
                 'rejected_count': rejected or 0,
@@ -3096,6 +3760,7 @@ def institution_users():
 def institution_payments():
     """Institution Payment Management Page"""
     from sqlalchemy.orm import joinedload
+    from sqlalchemy import exists
     db = SessionLocal()
     try:
         institution = db.query(Institution).filter(Institution.user_id == session['user_id']).first()
@@ -3103,19 +3768,34 @@ def institution_payments():
             flash('Institution profile not found', 'error')
             return redirect(url_for('web.profile'))
         
-        # Get gigs awaiting payment (completed but not paid)
+        # Get gigs awaiting payment (any gig that does not have a COMPLETED payment)
         unpaid_gigs = db.query(Job).options(
             joinedload(Job.assigned_professional)
-        ).outerjoin(Payment, Payment.gig_id == Job.id).filter(
+        ).filter(
             Job.institution_id == institution.id,
-            Job.status == JobStatus.COMPLETED,
-            Payment.id == None
-        ).all()
+            Job.assigned_professional_id.isnot(None),
+            Job.status.in_([JobStatus.ASSIGNED, JobStatus.ACCEPTED, JobStatus.COMPLETED]),
+            ~exists().where(
+                (Payment.gig_id == Job.id) &
+                (Payment.status == TransactionStatus.COMPLETED)
+            )
+        ).order_by(desc(Job.updated_at)).all()
         
         # Get payment history
+        latest_payment_per_gig = db.query(
+            Payment.gig_id.label('gig_id'),
+            func.max(Payment.created_at).label('max_created_at')
+        ).filter(
+            Payment.institution_id == institution.id
+        ).group_by(Payment.gig_id).subquery()
+
         payment_history = db.query(Payment).options(
             joinedload(Payment.gig),
             joinedload(Payment.professional)
+        ).join(
+            latest_payment_per_gig,
+            (Payment.gig_id == latest_payment_per_gig.c.gig_id) &
+            (Payment.created_at == latest_payment_per_gig.c.max_created_at)
         ).filter(
             Payment.institution_id == institution.id
         ).order_by(desc(Payment.created_at)).all()
@@ -3157,7 +3837,7 @@ def institution_payments():
 @login_required
 @role_required('institution')
 def professional_history(professional_id):
-    """View professional's interaction history with this institution"""
+    """View professional interaction history with this institution"""
     db = SessionLocal()
     try:
         institution = db.query(Institution).filter(Institution.user_id == session['user_id']).first()
@@ -3169,6 +3849,34 @@ def professional_history(professional_id):
         if not professional:
             flash('Professional not found', 'error')
             return redirect(url_for('web.institution_users'))
+
+        # Rating summary
+        average_rating = db.query(func.avg(Rating.rating)).filter(
+            Rating.professional_id == professional.id
+        ).scalar() or 0
+
+        total_ratings = db.query(func.count(Rating.id)).filter(
+            Rating.professional_id == professional.id
+        ).scalar() or 0
+
+        requires_registration = (professional.profession_category in ['Health', 'Formal']) if professional.profession_category else False
+        professional_is_verified = bool(requires_registration and professional.registration_number and professional.issuing_body)
+
+        # Find most recent completed gig with this professional for rating
+        rating_gig = db.query(Job).filter(
+            Job.institution_id == institution.id,
+            Job.assigned_professional_id == professional.id,
+            Job.status == JobStatus.COMPLETED
+        ).order_by(desc(Job.updated_at)).first()
+
+        rating_gig_id = rating_gig.id if rating_gig else None
+        already_rated = False
+        if rating_gig_id:
+            existing_rating = db.query(Rating).filter(
+                Rating.gig_id == rating_gig_id,
+                Rating.rater_id == session['user_id']
+            ).first()
+            already_rated = existing_rating is not None
         
         # Get all job interests from this professional for this institution's gigs
         interests = db.query(JobInterest).join(Job).filter(
@@ -3186,6 +3894,11 @@ def professional_history(professional_id):
                              active_section='users',
                              pending_count=unread_notifications,
                              professional=professional,
+                             professional_is_verified=professional_is_verified,
+                             average_rating=average_rating,
+                             total_ratings=total_ratings,
+                             rating_gig_id=rating_gig_id,
+                             already_rated=already_rated,
                              interests=interests)
     finally:
         db.close()
@@ -3372,10 +4085,16 @@ def delete_job_admin(job_id):
         job = db.query(Job).filter(Job.id == job_id).first()
         if not job:
             return jsonify({'error': 'Job not found'}), 404
-        
-        # Delete related interests
-        db.query(JobInterest).filter(JobInterest.job_id == job.id).delete()
-        
+
+        # Delete dependent records first to avoid FK constraint failures
+        db.query(Payment).filter(Payment.gig_id == job.id).delete(synchronize_session=False)
+        db.query(Rating).filter(Rating.gig_id == job.id).delete(synchronize_session=False)
+        db.query(Message).filter(Message.job_id == job.id).delete(synchronize_session=False)
+
+        # Interests tables (legacy + new)
+        db.query(GigInterest).filter(GigInterest.job_id == job.id).delete(synchronize_session=False)
+        db.query(JobInterest).filter(JobInterest.job_id == job.id).delete(synchronize_session=False)
+
         db.delete(job)
         db.commit()
         
@@ -3394,10 +4113,19 @@ def admin_payments():
     from sqlalchemy.orm import joinedload
     db = SessionLocal()
     try:
+        latest_payment_per_gig = db.query(
+            Payment.gig_id.label('gig_id'),
+            func.max(Payment.created_at).label('max_created_at')
+        ).group_by(Payment.gig_id).subquery()
+
         payments = db.query(Payment).options(
             joinedload(Payment.gig),
             joinedload(Payment.institution),
             joinedload(Payment.professional)
+        ).join(
+            latest_payment_per_gig,
+            (Payment.gig_id == latest_payment_per_gig.c.gig_id) &
+            (Payment.created_at == latest_payment_per_gig.c.max_created_at)
         ).order_by(desc(Payment.created_at)).all()
         return render_template('admin_payments.html', payments=payments)
     finally:
@@ -3519,8 +4247,5 @@ def admin_settings():
 def update_admin_settings():
     """Update admin settings"""
     data = request.get_json() if request.is_json else request.form
-    
-    # Here you would save settings to database or config file
-    # For now, just return success
-    
     return jsonify({'success': True, 'message': 'Settings updated successfully'})
+

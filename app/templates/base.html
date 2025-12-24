@@ -23,22 +23,61 @@
                     <li><a href="{{ url_for('web.browse_gigs') }}"><i class="fas fa-search"></i> Browse Gigs</a></li>
                     
                     {% if current_user %}
-                        {% if current_user.role.value == 'institution' %}
-                            <li><a href="{{ url_for('web.institution_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                        {% set active_role = session.get('active_role', current_user.role.value) %}
+                        {% if active_role == 'institution' %}
                             <li><a href="{{ url_for('web.post_gig') }}" class="btn-nav-post"><i class="fas fa-plus-circle"></i> Post Gig</a></li>
-                        {% elif current_user.role.value == 'professional' %}
-                            <li><a href="{{ url_for('web.professional_interested_page') }}"><i class="fas fa-hand-paper"></i> Gigs</a></li>
-                        {% elif current_user.role.value == 'admin' %}
-                            <li><a href="{{ url_for('web.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Admin Dashboard</a></li>
+                        {% endif %}
+                        {% if active_role == 'admin' %}
+                            <li><a href="{{ url_for('web.admin_dashboard') }}" title="Admin Dashboard" aria-label="Admin Dashboard"><i class="fas fa-tachometer-alt"></i></a></li>
+                        {% else %}
+                            <li><a href="{{ url_for('web.dashboard') }}" title="Dashboard" aria-label="Dashboard"><i class="fas fa-tachometer-alt"></i></a></li>
                         {% endif %}
                         
-                        <li><a href="{{ url_for('web.notifications') }}"><i class="fas fa-bell"></i> Notifications
+                        {% if active_role == 'institution' %}
+                        <li><a href="{{ url_for('web.institution_payments') }}" title="Institution Payments" aria-label="Institution Payments"><i class="fas fa-credit-card"></i></a></li>
+                        {% endif %}
+
+                        <li><a href="{{ url_for('web.notifications') }}" title="Notifications" aria-label="Notifications"><i class="fas fa-bell"></i>
                             {% if notification_count > 0 %}<span class="badge">{{ notification_count }}</span>{% endif %}
                         </a></li>
                         
-                        <li><a href="{{ url_for('messages.inbox') }}"><i class="fas fa-envelope"></i> Messages
+                        <li><a href="{{ url_for('messages.inbox') }}" title="Messages" aria-label="Messages"><i class="fas fa-envelope"></i>
                             <span id="message-badge" class="badge" style="display: none;"></span>
                         </a></li>
+                        
+                        {% if current_user.role.value != 'admin' %}
+                        <li class="dropdown role-switcher-dropdown">
+                            <a href="#" class="dropdown-toggle role-switcher-toggle">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span id="current-role-display">
+                                    {% set active_role = session.get('active_role', current_user.role.value) %}
+                                    {% if active_role == 'professional' %}
+                                        Professional
+                                    {% elif active_role == 'institution' %}
+                                        Institution
+                                    {% else %}
+                                        {{ active_role|title }}
+                                    {% endif %}
+                                </span>
+                                <i class="fas fa-chevron-down"></i>
+                            </a>
+                            <ul class="dropdown-menu role-switcher-menu">
+                                <li class="dropdown-header" style="padding: 0.5rem 1rem; font-weight: 600; color: #6b7280; font-size: 0.75rem; text-transform: uppercase;">Switch Role</li>
+                                <li><a href="#" onclick="switchRole('professional'); return false;">
+                                    <i class="fas fa-user-tie"></i> Professional
+                                    {% if session.get('active_role', current_user.role.value) == 'professional' %}
+                                        <i class="fas fa-check" style="float: right; color: #10b981;"></i>
+                                    {% endif %}
+                                </a></li>
+                                <li><a href="#" onclick="switchRole('institution'); return false;">
+                                    <i class="fas fa-building"></i> Institution
+                                    {% if session.get('active_role', current_user.role.value) == 'institution' %}
+                                        <i class="fas fa-check" style="float: right; color: #10b981;"></i>
+                                    {% endif %}
+                                </a></li>
+                            </ul>
+                        </li>
+                        {% endif %}
                         
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle">
@@ -51,7 +90,15 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li><a href="{{ url_for('web.profile') }}"><i class="fas fa-user"></i> Profile</a></li>
-                                <li><a href="{{ url_for('web.payments_history') }}"><i class="fas fa-credit-card"></i> Payments</a></li>
+                                <li>
+                                    {% if active_role == 'institution' %}
+                                        <a href="{{ url_for('web.institution_payments') }}"><i class="fas fa-credit-card"></i> Payments</a>
+                                    {% elif active_role == 'professional' %}
+                                        <a href="{{ url_for('web.professional_earnings') }}"><i class="fas fa-credit-card"></i> Payments</a>
+                                    {% else %}
+                                        <a href="{{ url_for('web.payments_history') }}"><i class="fas fa-credit-card"></i> Payments</a>
+                                    {% endif %}
+                                </li>
                                 <li><a href="{{ url_for('web.settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a href="{{ url_for('web.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -69,6 +116,101 @@
             </div>
         </div>
     </nav>
+
+    <!-- Role-Specific Quick Stats Bar -->
+    {% if current_user and active_role != 'admin' %}
+    <div class="role-stats-bar" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 0.75rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="container" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-{% if active_role == 'professional' %}user-tie{% else %}building{% endif %}" style="font-size: 1.25rem;"></i>
+                <span style="font-weight: 600; font-size: 0.95rem;">{{ active_role|title }} Dashboard</span>
+            </div>
+            
+            {% if active_role == 'professional' and role_stats %}
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-hand-paper" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Interested</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.interested_gigs }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-briefcase" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Active Gigs</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.assigned_gigs }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-check-circle" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Completed</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.completed_gigs }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-money-bill-wave" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Total Earned</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">UGX {{ "{:,.0f}".format(role_stats.total_earned) }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class="fas fa-search"></i> Find Gigs
+                </a>
+                <a href="{{ url_for('web.profile') }}" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class="fas fa-user-edit"></i> Profile ({{ role_stats.profile_completion }}%)
+                </a>
+            </div>
+            
+            {% elif active_role == 'institution' and role_stats %}
+            <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-folder-open" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Open Gigs</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.open_gigs }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-users" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Pending Interests</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.pending_interests }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-briefcase" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">In Progress</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.assigned_gigs }}</div>
+                    </div>
+                </div>
+                <div class="stat-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-check-circle" style="opacity: 0.8;"></i>
+                    <div>
+                        <div style="font-size: 0.75rem; opacity: 0.9;">Completed</div>
+                        <div style="font-weight: 700; font-size: 1.1rem;">{{ role_stats.completed_gigs }}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem;">
+                <a href="{{ url_for('web.post_gig') }}" class="btn btn-sm" style="background: rgba(255,255,255,0.95); color: #667eea; border: none; padding: 0.4rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='white'" onmouseout="this.style.background='rgba(255,255,255,0.95)'">
+                    <i class="fas fa-plus-circle"></i> Post New Gig
+                </a>
+                <a href="{{ url_for('web.institution_dashboard') }}" class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 0.4rem 1rem; border-radius: 6px; text-decoration: none; font-size: 0.85rem; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    <i class="fas fa-chart-line"></i> View Analytics
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -868,7 +1010,119 @@
             background: #f9fafb;
             border-radius: 0 0 12px 12px;
         }
+        
+        /* Role Switcher Styles */
+        .role-switcher-toggle {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .role-switcher-toggle:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .role-switcher-menu {
+            min-width: 200px;
+        }
+        
+        .role-switcher-menu li a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
     </style>
+    {% endif %}
+    
+    {% if current_user %}
+    <script>
+        // Role switching function
+        function switchRole(newRole) {
+            // Show loading state
+            const roleDisplay = document.getElementById('current-role-display');
+            const originalText = roleDisplay.textContent;
+            roleDisplay.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Switching...';
+            
+            // Make API call to switch role
+            fetch('/api/auth/switch-role', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include',
+                body: JSON.stringify({ role: newRole })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                if (data.token) {
+                    localStorage.setItem('auth_token', data.token);
+                }
+                
+                // Show success message
+                const roleName = newRole === 'professional' ? 'Professional' : 'Institution';
+                
+                // Create success toast
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast notification-toast-success';
+                toast.innerHTML = `
+                    <div class="toast-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <strong>Role Switched!</strong>
+                        <p>Now acting as ${roleName}</p>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+                
+                // Reload page to update UI
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Role switch error:', error);
+                roleDisplay.textContent = originalText;
+                
+                // Show error toast
+                const toast = document.createElement('div');
+                toast.className = 'notification-toast notification-toast-error';
+                toast.innerHTML = `
+                    <div class="toast-icon">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div class="toast-content">
+                        <strong>Switch Failed</strong>
+                        <p>${error.message || 'Could not switch role. Please try again.'}</p>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            });
+        }
+    </script>
     {% endif %}
     
     {% block extra_js %}{% endblock %}

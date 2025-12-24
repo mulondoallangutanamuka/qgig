@@ -102,7 +102,7 @@ def create_app():
     socketio = SocketIO(app, 
                        cors_allowed_origins="*", 
                        manage_session=True,
-                       async_mode='threading',
+                       async_mode='eventlet',
                        logger=True,
                        engineio_logger=True)
 

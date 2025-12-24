@@ -432,6 +432,7 @@ document.getElementById('change-password-form').addEventListener('submit', async
     try {
         const response = await fetch('/settings/change-password', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.fromEntries(formData))
         });
@@ -465,6 +466,7 @@ document.getElementById('update-email-form').addEventListener('submit', async (e
     try {
         const response = await fetch('/settings/update-email', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.fromEntries(formData))
         });
@@ -499,6 +501,7 @@ document.getElementById('notification-preferences-form').addEventListener('submi
     try {
         const response = await fetch('/settings/notification-preferences', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.fromEntries(formData))
         });
@@ -546,6 +549,7 @@ document.getElementById('delete-account-form').addEventListener('submit', async 
     try {
         const response = await fetch('/settings/delete-account', {
             method: 'POST',
+            credentials: 'same-origin',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(Object.fromEntries(formData))
         });

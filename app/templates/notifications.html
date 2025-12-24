@@ -12,10 +12,15 @@
                 <i class="fas fa-circle" style="font-size: 0.5em; animation: pulse 2s infinite;"></i> Live
             </span>
         </h1>
-        {% if notifications %}
-        <button onclick="deleteAll()" class="btn btn-danger btn-sm">
-            <i class="fas fa-trash-alt"></i> Delete All
-        </button>
+        {% if notifications_data %}
+        <div style="display: flex; gap: 0.5rem;">
+            <button onclick="markAllAsRead()" class="btn btn-primary btn-sm">
+                <i class="fas fa-check-double"></i> Mark All as Read
+            </button>
+            <button onclick="deleteAll()" class="btn btn-danger btn-sm">
+                <i class="fas fa-trash-alt"></i> Delete All
+            </button>
+        </div>
         {% endif %}
     </div>
     
@@ -28,6 +33,7 @@
                 {% set notification = item.notification %}
                 {% set profile = item.profile %}
                 {% set documents = item.documents %}
+                {% set is_verified = item.is_verified %}
                 <div class="notification-item" data-id="{{ notification.id }}" 
                      style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; {% if not notification.is_read %}background: #f0f9ff;{% endif %}">
                     <div style="display: flex; gap: 1rem; align-items: start;">
@@ -53,9 +59,20 @@
                                 console.log('Certificates:', {{ documents.certificates|length if documents.certificates else 0 }});
                             </script>
                             <div style="background: #f9fafb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem; border-left: 3px solid var(--primary-color);">
-                                <h5 style="margin: 0 0 0.75rem 0; font-size: 0.875rem; color: var(--primary-color); font-weight: 600;">
-                                    <i class="fas fa-user-circle"></i> Professional Profile
-                                </h5>
+                                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin: 0 0 0.75rem 0;">
+                                    <h5 style="margin: 0; font-size: 0.875rem; color: var(--primary-color); font-weight: 600;">
+                                        <i class="fas fa-user-circle"></i> Professional Profile
+                                    </h5>
+                                    {% if is_verified %}
+                                    <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.55rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">
+                                        <i class="fas fa-check-circle"></i> Verified
+                                    </span>
+                                    {% else %}
+                                    <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.55rem; border-radius: 9999px; background: #fee2e2; color: #991b1b; font-weight: 700; font-size: 0.75rem; white-space: nowrap;">
+                                        <i class="fas fa-times-circle"></i> Not Verified
+                                    </span>
+                                    {% endif %}
+                                </div>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; font-size: 0.875rem;">
                                     {% if profile.full_name %}
                                     <div><strong>Name:</strong> {{ profile.full_name }}</div>
@@ -85,12 +102,12 @@
                                     </h6>
                                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
                                         {% if documents.cv %}
-                                        <a href="{{ documents.cv.file_path }}" target="_blank" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
+                                        <a href="{{ url_for('file_upload.download_document', professional_id=profile.id, document_id=documents.cv.id) }}" target="_blank" class="btn btn-sm btn-primary" style="font-size: 0.75rem;">
                                             <i class="fas fa-file-pdf"></i> View CV
                                         </a>
                                         {% endif %}
                                         {% for cert in documents.certificates %}
-                                        <a href="{{ cert.file_path }}" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
+                                        <a href="{{ url_for('file_upload.download_document', professional_id=profile.id, document_id=cert.id) }}" target="_blank" class="btn btn-sm btn-secondary" style="font-size: 0.75rem;">
                                             <i class="fas fa-certificate"></i> Certificate {{ loop.index }}
                                         </a>
                                         {% endfor %}
@@ -108,7 +125,7 @@
                                 </small>
                                 
                                 <!-- Accept/Reject Buttons (for institution users with job interests) -->
-                                {% if notification.job_interest_id and current_user and current_user.role.value == 'institution' %}
+                                {% if notification.job_interest_id and current_user and active_role == 'institution' %}
                                     {% if notification.job_interest and notification.job_interest.status.value == 'pending' %}
                                         {% if notification.job_interest.job and notification.job_interest.job.status.value != 'assigned' %}
                                             <button onclick="acceptInterest({{ notification.job_interest_id }}, {{ notification.id }})" 
@@ -132,7 +149,7 @@
                                         <span class="badge-success">
                                             <i class="fas fa-check-circle"></i> Accepted
                                         </span>
-                                        {% if current_user and current_user.role.value == 'professional' %}
+                                        {% if current_user and active_role == 'professional' %}
                                         <a href="{{ url_for('messages.conversation', other_user_id=notification.job_interest.job.institution.user_id) }}" 
                                            class="btn btn-primary btn-sm"
                                            style="animation: pulse 2s infinite;">
@@ -144,6 +161,14 @@
                                             <i class="fas fa-times-circle"></i> Rejected
                                         </span>
                                     {% endif %}
+                                {% endif %}
+
+                                {% if not notification.is_read %}
+                                <button onclick="markAsRead({{ notification.id }})"
+                                        class="btn btn-secondary btn-sm"
+                                        title="Mark this notification as read">
+                                    <i class="fas fa-check"></i>
+                                </button>
                                 {% endif %}
                                 
                                 <!-- Delete Button -->
@@ -391,6 +416,80 @@ async function deleteAll() {
             location.reload();
         } else {
             showError('Failed to delete notifications');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred');
+    }
+}
+
+// Mark single notification as read
+async function markAsRead(notificationId) {
+    try {
+        const response = await fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            setNotificationReadUI(notificationId);
+            if (typeof window.updateNotificationBadge === 'function') {
+                window.updateNotificationBadge();
+            }
+            showSuccess(data.message || 'Notification marked as read');
+        } else {
+            showError(data.error || 'Failed to mark notification as read');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred');
+    }
+}
+
+function setNotificationReadUI(notificationId) {
+    const notifElement = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+    if (!notifElement) return;
+
+    notifElement.style.background = '';
+
+    const markBtn = notifElement.querySelector('button[onclick^="markAsRead("]');
+    if (markBtn) {
+        markBtn.remove();
+    }
+}
+
+// Mark all notifications as read
+async function markAllAsRead() {
+    if (!confirm('Mark all notifications as read?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/notifications/mark-all-read', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showSuccess(data.message || 'All notifications marked as read');
+            document.querySelectorAll('.notification-item').forEach(el => {
+                el.style.background = '';
+                const btn = el.querySelector('button[onclick^="markAsRead("]');
+                if (btn) btn.remove();
+            });
+            if (typeof window.updateNotificationBadge === 'function') {
+                window.updateNotificationBadge();
+            }
+        } else {
+            showError(data.error || 'Failed to mark notifications as read');
         }
     } catch (error) {
         console.error('Error:', error);

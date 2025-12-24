@@ -22,6 +22,11 @@
                 <h2 style="font-size: 1.5rem; font-weight: 700; color: #111827; margin-bottom: 0.5rem;">
                     {{ professional.full_name or professional.user.email }}
                 </h2>
+                {% if professional_is_verified %}
+                <div style="margin-bottom: 0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 700; font-size: 0.8rem;">
+                    <i class="fas fa-check-circle"></i> Verified
+                </div>
+                {% endif %}
                 <div style="display: flex; gap: 1.5rem; color: #6b7280; font-size: 0.875rem;">
                     <span><i class="fas fa-envelope"></i> {{ professional.user.email }}</span>
                     {% if professional.phone_number %}
@@ -31,6 +36,58 @@
                     <span><i class="fas fa-map-marker-alt"></i> {{ professional.location }}</span>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 220px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem 1.25rem;">
+                <div style="color: #6b7280; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
+                    Average Rating
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 0.75rem; margin-top: 0.5rem;">
+                    <div style="font-size: 2rem; font-weight: 800; color: #111827;">
+                        {{ (average_rating or 0)|round(1) }}
+                    </div>
+                    <div style="color: #f59e0b; font-size: 1.25rem;">
+                        {% for i in range(5) %}
+                        <i class="fas fa-star {% if i < (average_rating or 0) %}filled{% endif %}"></i>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">
+                    Based on {{ total_ratings or 0 }} review(s)
+                </div>
+            </div>
+
+            <div style="flex: 1; min-width: 260px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem 1.25rem;">
+                <div style="color: #6b7280; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em;">
+                    Rate This Professional
+                </div>
+
+                {% if rating_gig_id and not already_rated %}
+                <div style="margin-top: 0.5rem;">
+                    <div id="histRatingStars" style="display: flex; gap: 0.35rem; font-size: 1.5rem; color: #d1d5db;">
+                        {% for i in range(1, 6) %}
+                        <i class="fas fa-star hist-star" data-value="{{ i }}" style="cursor: pointer;"></i>
+                        {% endfor %}
+                    </div>
+                    <div id="histRatingHint" style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">Hover or click to rate</div>
+
+                    <textarea id="histRatingFeedback" rows="3" style="width: 100%; margin-top: 0.75rem; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; resize: vertical;" placeholder="Write a review/comment (optional)"></textarea>
+
+                    <button type="button" onclick="submitHistoryRating()" class="btn btn-primary btn-sm" style="margin-top: 0.75rem;">
+                        <i class="fas fa-paper-plane"></i> Submit
+                    </button>
+                </div>
+                {% elif rating_gig_id and already_rated %}
+                <div style="margin-top: 0.75rem; color: #059669; font-weight: 600;">
+                    <i class="fas fa-check-circle"></i> You already rated this professional.
+                </div>
+                {% else %}
+                <div style="margin-top: 0.75rem; color: #6b7280;">
+                    No completed gig found yet to rate.
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -93,4 +150,89 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let histSelectedRating = 0;
+
+function histPreviewStars(rating) {
+    document.querySelectorAll('.hist-star').forEach(star => {
+        const v = parseInt(star.getAttribute('data-value') || '0', 10);
+        if (v <= rating) {
+            star.style.color = '#f59e0b';
+        } else {
+            star.style.color = '#d1d5db';
+        }
+    });
+}
+
+function histSetStars(rating) {
+    histSelectedRating = rating;
+    histPreviewStars(rating);
+    const hintEl = document.getElementById('histRatingHint');
+    const labels = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    if (hintEl) hintEl.textContent = rating ? labels[rating] : 'Hover or click to rate';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.hist-star').forEach(star => {
+        star.addEventListener('mouseover', () => {
+            const v = parseInt(star.getAttribute('data-value') || '0', 10);
+            histPreviewStars(v);
+        });
+        star.addEventListener('click', () => {
+            const v = parseInt(star.getAttribute('data-value') || '0', 10);
+            histSetStars(v);
+        });
+    });
+    const wrap = document.getElementById('histRatingStars');
+    if (wrap) {
+        wrap.addEventListener('mouseleave', () => {
+            histPreviewStars(histSelectedRating);
+        });
+    }
+});
+
+async function submitHistoryRating() {
+    const gigId = {{ rating_gig_id or 'null' }};
+    if (!gigId) {
+        alert('No completed gig found to rate.');
+        return;
+    }
+
+    if (!histSelectedRating || histSelectedRating < 1 || histSelectedRating > 5) {
+        alert('Please select a rating (1 to 5 stars).');
+        return;
+    }
+
+    const feedback = (document.getElementById('histRatingFeedback')?.value || '').trim();
+
+    try {
+        const response = await fetch(`/api/gigs/${gigId}/rate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                rating: histSelectedRating,
+                feedback: feedback
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Rating submitted successfully.');
+            location.reload();
+        } else {
+            alert(data.error || 'Failed to submit rating');
+        }
+    } catch (error) {
+        console.error('Rating error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+</script>
 {% endblock %}

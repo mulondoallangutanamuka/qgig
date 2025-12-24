@@ -1,0 +1,358 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - QGig{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 2rem 0;">
+    <!-- Welcome Header -->
+    <div style="background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h1 style="margin: 0 0 0.5rem 0; font-size: 2rem; color: #1f2937;">
+                    Welcome back, {{ current_user.email.split('@')[0]|title }}! 👋
+                </h1>
+                <p style="margin: 0; color: #6b7280; font-size: 1rem;">
+                    {% if active_role == 'professional' %}
+                        Find and manage your gig opportunities
+                    {% elif active_role == 'institution' %}
+                        Manage your job postings and hire professionals
+                    {% endif %}
+                </p>
+            </div>
+            
+            <!-- Profile Completion Alert -->
+            {% if role_stats and role_stats.profile_completion < 100 %}
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 1rem; max-width: 300px;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-exclamation-triangle" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                    <div>
+                        <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">Complete Your Profile</strong>
+                        <p style="margin: 0; font-size: 0.875rem; color: #78350f;">{{ role_stats.profile_completion }}% complete</p>
+                        <a href="{{ url_for('web.profile') }}" style="color: #f59e0b; font-size: 0.875rem; font-weight: 600; text-decoration: none;">
+                            Complete now →
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Professional Dashboard Content -->
+    {% if active_role == 'professional' %}
+    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Active Gigs Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">Active Gigs</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Currently working on</p>
+                </div>
+                <div style="background: #dbeafe; color: #1e40af; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-briefcase" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                {{ role_stats.assigned_gigs if role_stats else 0 }}
+            </div>
+            <a href="{{ url_for('web.professional_interested_page') }}" style="color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                View all gigs →
+            </a>
+        </div>
+
+        <!-- Interested Gigs Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">Interested</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Awaiting response</p>
+                </div>
+                <div style="background: #fef3c7; color: #f59e0b; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-hand-paper" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                {{ role_stats.interested_gigs if role_stats else 0 }}
+            </div>
+            <a href="{{ url_for('web.browse_gigs') }}" style="color: #f59e0b; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                Find more gigs →
+            </a>
+        </div>
+
+        <!-- Earnings Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">Total Earned</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">All time earnings</p>
+                </div>
+                <div style="background: #d1fae5; color: #059669; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-money-bill-wave" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                UGX {{ "{:,.0f}".format(role_stats.total_earned) if role_stats else "0" }}
+            </div>
+            <a href="{{ url_for('web.payments_history') }}" style="color: #059669; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                View payment history →
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #1f2937;">Quick Actions</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('web.browse_gigs') }}" class="action-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Browse Gigs</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">Find new opportunities</span>
+            </a>
+            
+            <a href="{{ url_for('web.profile') }}" class="action-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-user-edit" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Update Profile</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">Enhance your profile</span>
+            </a>
+            
+            <a href="{{ url_for('messages.inbox') }}" class="action-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-envelope" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Messages</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">Check your inbox</span>
+            </a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Completed Gigs -->
+        <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 1rem;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem; color: #1f2937;">Completed Gigs</h2>
+                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Your latest finished work (last 10)</p>
+                </div>
+                <div style="background: #d1fae5; color: #059669; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-check-circle" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+
+            {% if completed_gigs_list %}
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                {% for gig in completed_gigs_list %}
+                <div style="border: 1px solid #e5e7eb; border-radius: 10px; padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 700; color: #111827; margin-bottom: 0.25rem;">{{ gig.title }}</div>
+                            <div style="color: #6b7280; font-size: 0.875rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                                <span><i class="fas fa-building"></i> {{ gig.institution.institution_name if gig.institution else 'Institution' }}</span>
+                                <span><i class="fas fa-map-marker-alt"></i> {{ gig.location }}</span>
+                                <span><i class="fas fa-money-bill-wave"></i> UGX {{ "{:,.0f}".format(gig.pay_amount) }}</span>
+                                <span><i class="fas fa-calendar-check"></i> {{ gig.updated_at.strftime('%b %d, %Y') if gig.updated_at else '' }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" style="color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 700; white-space: nowrap;">
+                            View →
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="color: #6b7280; text-align: center; padding: 2rem; border: 1px dashed #e5e7eb; border-radius: 12px;">
+                <i class="fas fa-clipboard-check" style="font-size: 2.5rem; opacity: 0.25; margin-bottom: 0.75rem;"></i>
+                <p style="margin: 0; font-weight: 600;">No completed gigs yet</p>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.875rem;">Complete gigs to build your work history here.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Boost Your CV -->
+        <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; gap: 1rem;">
+                <div>
+                    <h2 style="margin: 0; font-size: 1.5rem; color: #1f2937;">Boost Your CV</h2>
+                    <p style="margin: 0.25rem 0 0 0; color: #6b7280; font-size: 0.875rem;">Highlights recruiters care about</p>
+                </div>
+                <div style="background: #e0e7ff; color: #6366f1; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <i class="fas fa-award" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem;">
+                    <div style="color: #6b7280; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">Rating</div>
+                    <div style="margin-top: 0.5rem; font-size: 1.75rem; font-weight: 800; color: #111827;">
+                        {{ (cv_boost.average_rating or 0)|round(1) }}
+                    </div>
+                    <div style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">{{ cv_boost.total_ratings or 0 }} review(s)</div>
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem;">
+                    <div style="color: #6b7280; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">Repeat Clients</div>
+                    <div style="margin-top: 0.5rem; font-size: 1.75rem; font-weight: 800; color: #111827;">
+                        {{ cv_boost.repeat_clients or 0 }}
+                    </div>
+                    <div style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">Institutions worked with again</div>
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem;">
+                    <div style="color: #6b7280; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;">Hours</div>
+                    <div style="margin-top: 0.5rem; font-size: 1.75rem; font-weight: 800; color: #111827;">
+                        {{ (cv_boost.total_hours or 0)|round(0) }}
+                    </div>
+                    <div style="margin-top: 0.25rem; color: #6b7280; font-size: 0.875rem;">Total completed hours</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem;">
+                    <div style="font-weight: 800; color: #111827; margin-bottom: 0.5rem;">
+                        <i class="fas fa-industry"></i> Top Sectors
+                    </div>
+                    {% if cv_boost.top_sectors %}
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for item in cv_boost.top_sectors %}
+                        <div style="display: flex; justify-content: space-between; gap: 0.75rem; color: #374151; font-size: 0.875rem;">
+                            <span style="font-weight: 700;">{{ item.name }}</span>
+                            <span style="color: #6b7280;">{{ item.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="color: #6b7280; font-size: 0.875rem;">Complete more gigs to see trends.</div>
+                    {% endif %}
+                </div>
+
+                <div style="border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem;">
+                    <div style="font-weight: 800; color: #111827; margin-bottom: 0.5rem;">
+                        <i class="fas fa-briefcase"></i> Top Job Types
+                    </div>
+                    {% if cv_boost.top_job_types %}
+                    <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                        {% for item in cv_boost.top_job_types %}
+                        <div style="display: flex; justify-content: space-between; gap: 0.75rem; color: #374151; font-size: 0.875rem;">
+                            <span style="font-weight: 700;">{{ item.name }}</span>
+                            <span style="color: #6b7280;">{{ item.count }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div style="color: #6b7280; font-size: 0.875rem;">Add job type when gigs are posted to track this.</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <div style="color: #6b7280; font-size: 0.875rem;">
+                    Tip: keep your <strong>skills</strong>, <strong>bio</strong>, and <strong>experience</strong> updated for better matches.
+                </div>
+                <a href="{{ url_for('web.profile') }}" style="color: #6366f1; text-decoration: none; font-size: 0.875rem; font-weight: 800;">
+                    Improve profile →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Institution Dashboard Content -->
+    {% elif active_role == 'institution' %}
+    <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+        <!-- Open Gigs Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">Open Gigs</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Currently accepting applications</p>
+                </div>
+                <div style="background: #dbeafe; color: #1e40af; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-folder-open" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                {{ role_stats.open_gigs if role_stats else 0 }}
+            </div>
+            <a href="{{ url_for('web.institution_gigs') }}" style="color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                Manage gigs →
+            </a>
+        </div>
+
+        <!-- Pending Interests Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">Pending Interests</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Awaiting your review</p>
+                </div>
+                <div style="background: #fef3c7; color: #f59e0b; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-users" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                {{ role_stats.pending_interests if role_stats else 0 }}
+            </div>
+            <a href="{{ url_for('web.institution_notifications') }}" style="color: #f59e0b; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                Review applications →
+            </a>
+        </div>
+
+        <!-- In Progress Card -->
+        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #1f2937; font-size: 1.1rem;">In Progress</h3>
+                    <p style="margin: 0; color: #6b7280; font-size: 0.875rem;">Active assignments</p>
+                </div>
+                <div style="background: #e0e7ff; color: #6366f1; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-briefcase" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 700; color: #1f2937; margin-bottom: 0.5rem;">
+                {{ role_stats.assigned_gigs if role_stats else 0 }}
+            </div>
+            <a href="{{ url_for('web.institution_gigs') }}" style="color: #6366f1; text-decoration: none; font-size: 0.875rem; font-weight: 600;">
+                View active gigs →
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #1f2937;">Quick Actions</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{{ url_for('web.post_gig') }}" class="action-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-plus-circle" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Post New Gig</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">Create a job posting</span>
+            </a>
+            
+            <a href="{{ url_for('web.institution_notifications') }}" class="action-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-bell" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Notifications</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">Review applications</span>
+            </a>
+            
+            <a href="{{ url_for('web.institution_analytics') }}" class="action-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 1.5rem; border-radius: 12px; text-decoration: none; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform='translateY(0)'">
+                <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 0.75rem; display: block;"></i>
+                <strong style="display: block; font-size: 1.1rem; margin-bottom: 0.25rem;">Analytics</strong>
+                <span style="font-size: 0.875rem; opacity: 0.9;">View insights</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Activity -->
+    <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <h2 style="margin: 0 0 1.5rem 0; font-size: 1.5rem; color: #1f2937;">Recent Activity</h2>
+        <div style="color: #6b7280; text-align: center; padding: 2rem;">
+            <i class="fas fa-history" style="font-size: 3rem; opacity: 0.3; margin-bottom: 1rem;"></i>
+            <p style="margin: 0;">Your recent activity will appear here</p>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    transition: all 0.3s;
+}
+</style>
+{% endblock %}

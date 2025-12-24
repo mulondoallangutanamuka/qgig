@@ -62,8 +62,12 @@ def register_socketio_events(socketio_instance):
                 logger.error(f"User {user_id} not found in database")
                 return False
             
-            # Join role-based room
-            if user.role.value == 'institution':
+            # Get active role from session (supports role switching)
+            active_role = session.get('active_role', user.role.value)
+            logger.info(f"User {user_id} connecting with active_role: {active_role}")
+            
+            # Join role-based room based on active_role
+            if active_role == 'institution':
                 institution = db.query(Institution).filter(Institution.user_id == user_id).first()
                 if institution:
                     room_name = f'institution_{institution.id}'
@@ -81,7 +85,7 @@ def register_socketio_events(socketio_instance):
                     logger.warning(f"Institution profile not found for user {user_id}")
                     emit('connected', {'user_id': user_id, 'message': 'Connected (no institution profile)'})
                     
-            elif user.role.value == 'professional':
+            elif active_role == 'professional':
                 professional = db.query(Professional).filter(Professional.user_id == user_id).first()
                 if professional:
                     room_name = f'professional_{professional.id}'
@@ -100,8 +104,8 @@ def register_socketio_events(socketio_instance):
                     emit('connected', {'user_id': user_id, 'message': 'Connected (no professional profile)'})
             else:
                 # Admin or other roles
-                logger.info(f'User {user_id} connected with role: {user.role.value}')
-                emit('connected', {'user_id': user_id, 'role': user.role.value, 'message': 'Connected to notification service'})
+                logger.info(f'User {user_id} connected with active_role: {active_role}')
+                emit('connected', {'user_id': user_id, 'role': active_role, 'message': 'Connected to notification service'})
             
         except Exception as e:
             logger.error(f'Error during socket connection setup: {e}', exc_info=True)

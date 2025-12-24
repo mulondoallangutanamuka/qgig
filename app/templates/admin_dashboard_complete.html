@@ -99,12 +99,29 @@
                         </tr>
                     </thead>
                     <tbody id="usersTableBody">
+                        {% for u in users %}
                         <tr>
-                            <td colspan="5" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
-                                <div style="margin-top: 1rem; color: #6b7280;">Loading users...</div>
+                            <td>{{ u.email }}</td>
+                            <td><span class="badge-status">{{ u.role.value|upper }}</span></td>
+                            <td>
+                                <span class="badge-status badge-{% if u.is_active %}active{% else %}inactive{% endif %}">
+                                    {% if u.is_active %}Active{% else %}Inactive{% endif %}
+                                </span>
+                            </td>
+                            <td>{{ u.created_at.strftime('%b %d, %Y') if u.created_at else '' }}</td>
+                            <td>
+                                {% if u.role.value != 'admin' %}
+                                <button type="button" class="btn btn-sm {% if u.is_active %}btn-outline{% else %}btn-primary{% endif %} admin-toggle-user" data-user-id="{{ u.id }}" data-is-active="{{ 1 if u.is_active else 0 }}">
+                                    {% if u.is_active %}Suspend{% else %}Activate{% endif %}
+                                </button>
+                                {% else %}
+                                <span style="color: #6b7280;">Admin</span>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% else %}
+                        <tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">No users found</td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -130,12 +147,28 @@
                         </tr>
                     </thead>
                     <tbody id="documentsTableBody">
+                        {% for d in documents %}
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
-                                <div style="margin-top: 1rem; color: #6b7280;">Loading documents...</div>
+                            <td>{{ d.user.email if d.user else ('User #' ~ d.user_id) }}</td>
+                            <td>{{ d.document_type.value|upper if d.document_type else '' }}</td>
+                            <td>{{ d.file_path.split('/')[-1] if d.file_path else '' }}</td>
+                            <td>{{ d.uploaded_at.strftime('%b %d, %Y') if d.uploaded_at else '' }}</td>
+                            <td><span class="badge-status badge-{{ d.status.value if d.status else 'pending' }}">{{ (d.status.value if d.status else 'pending')|upper }}</span></td>
+                            <td>
+                                {% if d.status and d.status.value == 'pending' %}
+                                <form method="POST" action="{{ url_for('web.approve_document', document_id=d.id) }}" style="display: inline;">
+                                    <button type="submit" class="btn btn-sm btn-primary" onclick="return confirm('Approve this document?')">Approve</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('web.reject_document', document_id=d.id) }}" style="display: inline;">
+                                    <input type="hidden" name="reason" value="Document did not meet verification requirements">
+                                    <button type="submit" class="btn btn-sm btn-outline" onclick="return confirm('Reject this document?')">Reject</button>
+                                </form>
+                                {% endif %}
                             </td>
                         </tr>
+                        {% else %}
+                        <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No documents found</td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -167,12 +200,18 @@
                         </tr>
                     </thead>
                     <tbody id="paymentsTableBody">
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 2rem;">
-                                <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6b7280;"></i>
-                                <div style="margin-top: 1rem; color: #6b7280;">Loading payments...</div>
-                            </td>
+                        {% for p in payments %}
+                        <tr data-status="{{ p.status.value if p.status else '' }}">
+                            <td>#{{ p.id }}</td>
+                            <td>{{ p.institution.institution_name if p.institution else ('Institution #' ~ p.institution_id) }}</td>
+                            <td>{{ p.professional.full_name if p.professional else ('Professional #' ~ p.professional_id) }}</td>
+                            <td>UGX {{ "{:,.0f}".format(p.amount) }}</td>
+                            <td><span class="badge-status badge-{{ p.status.value if p.status else 'pending' }}">{{ (p.status.value if p.status else 'pending')|upper }}</span></td>
+                            <td>{{ p.created_at.strftime('%b %d, %Y') if p.created_at else '' }}</td>
                         </tr>
+                        {% else %}
+                        <tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No payments found</td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
@@ -226,7 +265,7 @@
                     <div id="revenueChart" style="height: 300px; display: flex; align-items: flex-end; justify-content: space-around; gap: 0.5rem;">
                         {% if analytics.daily_revenue %}
                             {% for day in analytics.daily_revenue %}
-                            <div style="flex: 1; background: linear-gradient(to top, #3b82f6, #60a5fa); border-radius: 4px 4px 0 0; min-height: 20px; height: {{ (day.revenue / analytics.payments.total_revenue * 100)|int }}%; position: relative;" title="{{ day.date }}: ${{ day.revenue }}">
+                            <div class="revenue-bar" data-height="{% if analytics.payments.total_revenue %}{{ (day.revenue / analytics.payments.total_revenue * 100)|int }}{% else %}0{% endif %}" style="flex: 1; background: linear-gradient(to top, #3b82f6, #60a5fa); border-radius: 4px 4px 0 0; min-height: 20px; height: 0%; position: relative;" title="{{ day.date }}: ${{ day.revenue }}">
                                 <div style="position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 0.65rem; color: #6b7280; white-space: nowrap;">{{ day.date[-5:] }}</div>
                             </div>
                             {% endfor %}
@@ -278,15 +317,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Load users
-    loadUsers();
-    loadDocuments();
-    loadPayments();
-
-    // Payment filter
-    document.getElementById('paymentStatusFilter').addEventListener('change', function() {
-        loadPayments(this.value);
-    });
+    // Payment filter (client-side filter on server-rendered rows)
+    const filterEl = document.getElementById('paymentStatusFilter');
+    if (filterEl) {
+        filterEl.addEventListener('change', function() {
+            const status = (this.value || '').toLowerCase();
+            document.querySelectorAll('#paymentsTableBody tr[data-status]').forEach(row => {
+                const rowStatus = (row.getAttribute('data-status') || '').toLowerCase();
+                row.style.display = (!status || rowStatus === status) ? '' : 'none';
+            });
+        });
+    }
 
     // User search
     document.getElementById('userSearch').addEventListener('input', function() {
@@ -296,167 +337,47 @@ document.addEventListener('DOMContentLoaded', function() {
             row.style.display = text.includes(search) ? '' : 'none';
         });
     });
+
+    // Revenue chart bars
+    document.querySelectorAll('.revenue-bar').forEach(bar => {
+        const pct = parseInt(bar.getAttribute('data-height') || '0', 10);
+        bar.style.height = `${Math.max(0, Math.min(100, pct))}%`;
+    });
+
+    // User status toggles
+    document.querySelectorAll('.admin-toggle-user').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const userId = parseInt(btn.getAttribute('data-user-id') || '0', 10);
+            const isActive = parseInt(btn.getAttribute('data-is-active') || '0', 10);
+            if (userId) toggleUserStatus(userId, isActive);
+        });
+    });
 });
 
-function loadUsers() {
-    fetch('/api/admin/users', {
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const tbody = document.getElementById('usersTableBody');
-        if (data.users && data.users.length > 0) {
-            tbody.innerHTML = data.users.map(user => `
-                <tr>
-                    <td>${user.email}</td>
-                    <td><span class="badge-status">${user.role.toUpperCase()}</span></td>
-                    <td><span class="badge-status badge-${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
-                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                    <td>
-                        ${user.role !== 'admin' ? `
-                            <button onclick="toggleUserStatus(${user.id}, ${user.is_active})" class="btn btn-sm ${user.is_active ? 'btn-outline' : 'btn-primary'}">
-                                ${user.is_active ? 'Suspend' : 'Activate'}
-                            </button>
-                        ` : '<span style="color: #6b7280;">Admin</span>'}
-                    </td>
-                </tr>
-            `).join('');
-        } else {
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #6b7280;">No users found</td></tr>';
-        }
-    })
-    .catch(err => {
-        console.error('Error loading users:', err);
-        document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading users</td></tr>';
-    });
-}
-
-function loadDocuments() {
-    fetch('/api/admin/documents/all', {
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const tbody = document.getElementById('documentsTableBody');
-        if (data.documents && data.documents.length > 0) {
-            tbody.innerHTML = data.documents.map(doc => `
-                <tr>
-                    <td>User #${doc.user_id}</td>
-                    <td>${doc.document_type.toUpperCase()}</td>
-                    <td>${doc.file_name}</td>
-                    <td>${new Date(doc.uploaded_at).toLocaleDateString()}</td>
-                    <td><span class="badge-status badge-${doc.status}">${doc.status.toUpperCase()}</span></td>
-                    <td>
-                        ${doc.status === 'pending' ? `
-                            <button onclick="approveDocument(${doc.id})" class="btn btn-sm btn-primary">Approve</button>
-                            <button onclick="rejectDocument(${doc.id})" class="btn btn-sm btn-outline">Reject</button>
-                        ` : ''}
-                        <button onclick="downloadDocument(${doc.id})" class="btn btn-sm btn-outline">
-                            <i class="fas fa-download"></i>
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No documents found</td></tr>';
-        }
-    })
-    .catch(err => {
-        console.error('Error loading documents:', err);
-        document.getElementById('documentsTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading documents</td></tr>';
-    });
-}
-
-function loadPayments(status = '') {
-    const url = status ? `/api/admin/payments/filter?status=${status}` : '/api/admin/payments/all';
-    fetch(url, {
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        const tbody = document.getElementById('paymentsTableBody');
-        if (data.payments && data.payments.length > 0) {
-            tbody.innerHTML = data.payments.map(payment => `
-                <tr>
-                    <td>#${payment.id}</td>
-                    <td>Institution #${payment.institution_id}</td>
-                    <td>Professional #${payment.professional_id}</td>
-                    <td>$${payment.amount.toFixed(2)}</td>
-                    <td><span class="badge-status badge-${payment.status}">${payment.status.toUpperCase()}</span></td>
-                    <td>${new Date(payment.created_at).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
-        } else {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #6b7280;">No payments found</td></tr>';
-        }
-    })
-    .catch(err => {
-        console.error('Error loading payments:', err);
-        document.getElementById('paymentsTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem; color: #ef4444;">Error loading payments</td></tr>';
-    });
-}
-
-function toggleUserStatus(userId, isActive) {
+async function toggleUserStatus(userId, isActive) {
     const action = isActive ? 'suspend' : 'activate';
     if (!confirm(`Are you sure you want to ${action} this user?`)) return;
 
-    fetch(`/api/admin/users/${userId}/${action}`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
+    try {
+        const response = await fetch(`/admin/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+            alert(data.message);
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Failed to update user status'));
         }
-    })
-    .then(r => r.json())
-    .then(data => {
-        alert(data.message);
-        loadUsers();
-    })
-    .catch(err => alert('Error: ' + err.message));
-}
-
-function approveDocument(docId) {
-    fetch(`/api/admin/documents/${docId}/approve`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token')
-        }
-    })
-    .then(r => r.json())
-    .then(data => {
-        alert(data.message);
-        loadDocuments();
-    })
-    .catch(err => alert('Error: ' + err.message));
-}
-
-function rejectDocument(docId) {
-    const reason = prompt('Rejection reason:');
-    if (!reason) return;
-
-    fetch(`/api/admin/documents/${docId}/reject`, {
-        method: 'PUT',
-        headers: {
-            'Authorization': 'Bearer ' + localStorage.getItem('token'),
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ reason })
-    })
-    .then(r => r.json())
-    .then(data => {
-        alert(data.message);
-        loadDocuments();
-    })
-    .catch(err => alert('Error: ' + err.message));
-}
-
-function downloadDocument(docId) {
-    window.open(`/api/admin/documents/${docId}/download`, '_blank');
+    } catch (error) {
+        console.error('Error toggling user status:', error);
+        alert('An error occurred while updating user status.');
+    }
 }
 </script>
 {% endblock %}

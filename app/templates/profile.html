@@ -6,6 +6,11 @@
         <img src="{% if profile and profile.profile_picture %}{{ profile.profile_picture }}{% else %}https://ui-avatars.com/api/?name={{ current_user.email }}{% endif %}" 
              alt="Profile" class="profile-avatar" id="profileAvatar">
         <h1 class="profile-name">{{ current_user.email.split('@')[0] }}</h1>
+        {% if active_role == 'professional' and is_verified %}
+        <div style="margin-top: 0.5rem; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 9999px; background: #d1fae5; color: #065f46; font-weight: 700; font-size: 0.8rem;">
+            <i class="fas fa-check-circle"></i> Verified
+        </div>
+        {% endif %}
         <p class="profile-role">{{ current_user.role|title }}</p>
     </div>
     
@@ -28,7 +33,7 @@
                             <label class="form-label">Username</label>
                             <input type="text" name="username" class="form-control" value="{{ current_user.username or '' }}" placeholder="Choose a unique username">
                         </div>
-                        {% if current_user.role.value == 'professional' and profile %}
+                        {% if active_role == 'professional' and profile %}
                         <div class="form-group">
                             <label class="form-label">Full Name</label>
                             <input type="text" name="name" class="form-control" value="{{ profile.name or '' if profile else '' }}" required>
@@ -98,7 +103,7 @@
                                 <input type="number" name="daily_rate" class="form-control" value="{{ profile.daily_rate or '' }}">
                             </div>
                         </div>
-                        {% elif current_user.role.value == 'institution' %}
+                        {% elif active_role == 'institution' %}
                         <div class="form-group">
                             <label class="form-label">Institution Name</label>
                             <input type="text" name="name" class="form-control" value="{{ profile.name or '' }}">
@@ -127,7 +132,7 @@
                 </div>
             </div>
             
-            {% if current_user.role.value == 'professional' %}
+            {% if active_role == 'professional' %}
             <!-- File Upload Section -->
             <div class="card" style="margin-top: 2rem;">
                 <div class="card-header">
@@ -389,7 +394,7 @@
                     {% endif %}
                 </div>
             </div>
-            {% elif current_user.role.value == 'institution' and profile %}
+            {% elif active_role == 'institution' and profile %}
             <!-- Institution Summary Card -->
             <div class="card" style="margin-bottom: 1.5rem;">
                 <div class="card-header">
@@ -456,7 +461,7 @@
                     <h3 class="card-title"><i class="fas fa-chart-line"></i> Statistics</h3>
                 </div>
                 <div class="card-body">
-                    {% if current_user.role.value == 'professional' %}
+                    {% if active_role == 'professional' %}
                     <div style="margin-bottom: 1rem;">
                         <div style="color: var(--gray-600); font-size: 0.875rem;">Gigs Completed</div>
                         <div style="font-size: 1.5rem; font-weight: 700;">{{ stats.completed_gigs if stats.completed_gigs is defined else 0 }}</div>

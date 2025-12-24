@@ -65,7 +65,7 @@
             </div>
             
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                <a href="{{ url_for('web.view_professional_profile', professional_id=interest.professional.id) }}" class="btn btn-primary btn-sm">
+                <a href="{{ url_for('web.professional_history', professional_id=interest.professional.id) }}" class="btn btn-primary btn-sm">
                     <i class="fas fa-user"></i> View Profile
                 </a>
                 <button onclick="assignGig({{ gig.id }}, {{ interest.professional.id }})" class="btn btn-secondary btn-sm">
@@ -89,13 +89,12 @@ async function assignGig(gigId, professionalId) {
     if (!confirm('Assign this gig to the selected professional?')) return;
     
     try {
-        const response = await fetch(`/api/jobs/${gigId}/assign`, {
+        const response = await fetch(`/jobs/${gigId}/assign/${professionalId}`, {
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + localStorage.getItem('token'),
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ professional_id: professionalId })
+            credentials: 'same-origin'
         });
         
         const data = await response.json();

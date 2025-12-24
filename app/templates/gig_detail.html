@@ -82,7 +82,7 @@
                     {% endif %}
                 </div>
                 
-                {% if current_user and current_user.role.value == 'professional' and gig.status.value == 'open' %}
+                {% if current_user and active_role == 'professional' and gig.status.value == 'open' %}
                 <div class="card-footer">
                     {% if user_has_interest %}
                     <button class="btn btn-success btn-lg btn-block" disabled>
@@ -170,7 +170,7 @@
             </div>
             {% endif %}
             
-            {% if current_user and current_user.role.value == 'professional' %}
+            {% if current_user and active_role == 'professional' %}
             <div class="card" style="margin-top: 1.5rem;">
                 <div class="card-body text-center">
                     <h4 style="margin-bottom: 1rem;"><i class="fas fa-envelope"></i> Contact Institution</h4>
