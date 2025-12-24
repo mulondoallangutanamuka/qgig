@@ -2,6 +2,7 @@ flask
 flask-cors==4.0.1
 flask-socketio
 python-socketio
+flask-login
 sqlalchemy
 alembic
 python-dotenv
