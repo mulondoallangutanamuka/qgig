@@ -31,14 +31,14 @@
                         <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">{{ gig.title }}</h1>
                         <div class="gig-meta">
                             <span class="gig-meta-item">
-                                <i class="fas fa-building"></i> {{ gig.institution.name }}
+                                <i class="fas fa-building"></i> {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
                             </span>
                             <span class="gig-meta-item">
                                 <i class="fas fa-calendar"></i> Posted {{ gig.created_at.strftime('%b %d, %Y') }}
                             </span>
                         </div>
                     </div>
-                    <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+                    <span class="badge-status badge-{{ gig.status.value if gig.status else '' }}">{{ gig.status.value|upper if gig.status else '' }}</span>
                 </div>
                 
                 <div class="card-body">
@@ -70,7 +70,7 @@
                         {% endif %}
                         <div>
                             <div style="color: var(--gray-600); margin-bottom: 0.25rem;">Status</div>
-                            <div><span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span></div>
+                            <div><span class="badge-status badge-{{ gig.status.value if gig.status else '' }}">{{ gig.status.value|upper if gig.status else '' }}</span></div>
                         </div>
                     </div>
                     

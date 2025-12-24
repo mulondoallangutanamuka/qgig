@@ -22,7 +22,7 @@
                         Uploaded by: {{ doc.user.email }}
                     </p>
                 </div>
-                <span class="badge-status badge-{{ doc.status }}">{{ doc.status|upper }}</span>
+                <span class="badge-status badge-{{ doc.status.value if doc.status else '' }}">{{ doc.status.value|upper if doc.status else '' }}</span>
             </div>
             <div class="card-body">
                 <div class="grid grid-2" style="gap: 2rem; margin-bottom: 1.5rem;">

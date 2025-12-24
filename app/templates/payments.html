@@ -52,15 +52,15 @@
                         </td>
                         <td>
                             {% if current_user.role == 'professional' %}
-                                {{ payment.institution.name }}
+                                {{ payment.institution.institution_name or payment.institution.contact_email or 'Institution' }}
                             {% else %}
                                 {{ payment.professional.name or payment.professional.user.email }}
                             {% endif %}
                         </td>
                         <td style="font-weight: 600;">UGX {{ "{:,.0f}".format(payment.amount) }}</td>
                         <td>
-                            <span class="badge-status badge-{{ payment.status }}">
-                                {{ payment.status|upper }}
+                            <span class="badge-status badge-{{ payment.status.value if payment.status else '' }}">
+                                {{ payment.status.value|upper if payment.status else '' }}
                             </span>
                         </td>
                         <td>

@@ -15,7 +15,7 @@
                 <p style="margin: 0; color: var(--gray-700);">
                     <strong>Rating:</strong> 
                     {% if is_professional %}
-                        {{ gig.institution.name }}
+                        {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
                     {% else %}
                         {{ gig.assigned_professional.name or gig.assigned_professional.user.full_name }}
                     {% endif %}

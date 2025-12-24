@@ -48,13 +48,13 @@ def seed() -> None:
     # Ensure tables exist (first deploy convenience; migrations are better long-term)
     Base.metadata.create_all(bind=engine)
 
-    admin_email = os.getenv("ADMIN_EMAIL", "admin@qgig.local")
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@qgig.com")
     admin_password = os.getenv("ADMIN_PASSWORD", "Admin123!")
 
-    institution_email = os.getenv("SEED_INSTITUTION_EMAIL", "institution@qgig.local")
+    institution_email = os.getenv("SEED_INSTITUTION_EMAIL", "institution@qgig.com")
     institution_password = os.getenv("SEED_INSTITUTION_PASSWORD", "Institution123!")
 
-    professional_email = os.getenv("SEED_PROFESSIONAL_EMAIL", "professional@qgig.local")
+    professional_email = os.getenv("SEED_PROFESSIONAL_EMAIL", "professional@qgig.com")
     professional_password = os.getenv("SEED_PROFESSIONAL_PASSWORD", "Professional123!")
 
     db = SessionLocal()

@@ -98,8 +98,8 @@
                         {% for job in recent_jobs %}
                         <tr>
                             <td>{{ job.title[:30] }}...</td>
-                            <td>{{ job.institution.name }}</td>
-                            <td><span class="badge-status badge-{{ job.status }}">{{ job.status|upper }}</span></td>
+                            <td>{{ job.institution.institution_name or job.institution.contact_email or 'Institution' }}</td>
+                            <td><span class="badge-status badge-{{ job.status.value if job.status else '' }}">{{ job.status.value|upper if job.status else '' }}</span></td>
                             <td>{{ job.created_at.strftime('%b %d') }}</td>
                         </tr>
                         {% endfor %}

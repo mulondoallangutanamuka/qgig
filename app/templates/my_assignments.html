@@ -17,11 +17,11 @@
                     <h3 class="gig-title">{{ gig.title }}</h3>
                     <div class="gig-meta">
                         <span class="gig-meta-item">
-                            <i class="fas fa-building"></i> {{ gig.institution.name }}
+                            <i class="fas fa-building"></i> {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
                         </span>
                     </div>
                 </div>
-                <span class="badge-status badge-{{ gig.status }}">{{ gig.status|upper }}</span>
+                <span class="badge-status badge-{{ gig.status.value if gig.status else '' }}">{{ gig.status.value|upper if gig.status else '' }}</span>
             </div>
             
             <p class="gig-description">{{ gig.description[:150] }}...</p>

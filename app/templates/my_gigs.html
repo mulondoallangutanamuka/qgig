@@ -49,7 +49,7 @@
                         </span>
                     </div>
                 </div>
-                <span class="badge-status badge-{{ gig.status.value if gig.status is not string else gig.status }}">{{ (gig.status.value if gig.status is not string else gig.status)|upper }}</span>
+                <span class="badge-status badge-{{ gig.status.value if gig.status else '' }}">{{ gig.status.value|upper if gig.status else '' }}</span>
             </div>
             
             <p class="gig-description">{{ gig.description[:150] }}{% if gig.description|length > 150 %}...{% endif %}</p>
