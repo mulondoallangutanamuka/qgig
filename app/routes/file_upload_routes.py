@@ -359,25 +359,41 @@ def download_document(professional_id, document_id):
             if not doc_path:
                 return doc_path
 
-            # Already an absolute path on this machine
-            if os.path.isabs(doc_path):
+            # Already an absolute path that exists
+            if os.path.isabs(doc_path) and os.path.exists(doc_path):
                 return doc_path
 
-            # Handle legacy web paths stored in DB, e.g. /static/uploads/...
+            # Handle web paths stored in DB, e.g. /static/uploads/...
             normalized = doc_path.replace('\\', '/')
             if normalized.startswith('/'):
                 normalized = normalized[1:]
 
-            # If it starts with static/, it should live under <project>/app/static/...
+            # Try multiple resolution strategies
+            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+            
+            # Strategy 1: If starts with static/, resolve to app/static/...
             if normalized.startswith('static/'):
-                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-                return os.path.join(project_root, 'app', normalized.replace('/', os.sep))
+                candidate = os.path.join(project_root, 'app', normalized.replace('/', os.sep))
+                if os.path.exists(candidate):
+                    return candidate
 
-            # If it starts with app/static/... as a relative path
+            # Strategy 2: If starts with app/static/...
             if normalized.startswith('app/static/'):
-                project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-                return os.path.join(project_root, normalized.replace('/', os.sep))
+                candidate = os.path.join(project_root, normalized.replace('/', os.sep))
+                if os.path.exists(candidate):
+                    return candidate
+            
+            # Strategy 3: Try as relative to project root
+            candidate = os.path.join(project_root, normalized.replace('/', os.sep))
+            if os.path.exists(candidate):
+                return candidate
+            
+            # Strategy 4: Try as relative to app directory
+            candidate = os.path.join(project_root, 'app', normalized.replace('/', os.sep))
+            if os.path.exists(candidate):
+                return candidate
 
+            # Return original if nothing works
             return doc_path
 
         resolved_path = _resolve_document_path(document.file_path)
