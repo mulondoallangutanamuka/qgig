@@ -184,6 +184,62 @@
             </div>
             
             <script>
+            // Function to refresh uploaded files list
+            function refreshFilesList() {
+                fetch('/api/professional/files')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.files && data.files.length > 0) {
+                            updateFilesTable(data.files);
+                        }
+                    })
+                    .catch(error => console.error('Error refreshing files list:', error));
+            }
+            
+            // Function to update files table
+            function updateFilesTable(files) {
+                const tableBody = document.querySelector('.card table tbody');
+                if (!tableBody) return;
+                
+                tableBody.innerHTML = files.map(file => {
+                    let typeBadge = '';
+                    if (file.type === 'cv') {
+                        typeBadge = '<span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: #fef3c7; color: #92400e; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-file-pdf"></i> CV</span>';
+                    } else if (file.type === 'certificate') {
+                        typeBadge = '<span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: #dbeafe; color: #1e40af; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-certificate"></i> Certificate</span>';
+                    } else if (file.type === 'profile_picture') {
+                        typeBadge = '<span style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.75rem; background: #d1fae5; color: #065f46; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;"><i class="fas fa-user-circle"></i> Photo</span>';
+                    }
+                    
+                    let statusBadge = '';
+                    if (file.status === 'approved') {
+                        statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #10b981; font-size: 0.875rem; font-weight: 500;"><i class="fas fa-check-circle"></i> Approved</span>';
+                    } else if (file.status === 'pending') {
+                        statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #f59e0b; font-size: 0.875rem; font-weight: 500;"><i class="fas fa-clock"></i> Pending</span>';
+                    } else if (file.status === 'rejected') {
+                        statusBadge = '<span style="display: inline-flex; align-items: center; gap: 0.25rem; color: #ef4444; font-size: 0.875rem; font-weight: 500;"><i class="fas fa-times-circle"></i> Rejected</span>';
+                    }
+                    
+                    const uploadDate = file.uploaded_at ? new Date(file.uploaded_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '-';
+                    const fileSize = file.size ? (file.size / 1024).toFixed(1) + ' KB' : '-';
+                    
+                    return `
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 0.75rem;">${typeBadge}</td>
+                            <td style="padding: 0.75rem; font-size: 0.875rem;">${file.name}</td>
+                            <td style="padding: 0.75rem; font-size: 0.875rem; color: #6b7280;">${fileSize}</td>
+                            <td style="padding: 0.75rem; font-size: 0.875rem; color: #6b7280;">${uploadDate}</td>
+                            <td style="padding: 0.75rem;">${statusBadge}</td>
+                            <td style="padding: 0.75rem;">
+                                <a href="/api/professional/${file.id}/download/${file.id}" class="btn btn-sm btn-secondary" style="font-size: 0.875rem;">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
             // CV Upload
             document.getElementById('cvUpload').addEventListener('change', function(e) {
                 const file = e.target.files[0];
@@ -201,10 +257,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('cvStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + ' - Reloading...</span>';
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1000);
+                        document.getElementById('cvStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                        // Refresh files list instead of reloading page
+                        setTimeout(refreshFilesList, 500);
                     } else {
                         document.getElementById('cvStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
                     }
@@ -231,10 +286,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('certificateStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + ' - Reloading...</span>';
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1000);
+                        document.getElementById('certificateStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                        // Refresh files list instead of reloading page
+                        setTimeout(refreshFilesList, 500);
                     } else {
                         document.getElementById('certificateStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
                     }
@@ -261,11 +315,19 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        document.getElementById('profilePicStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + ' - Reloading...</span>';
-                        // Reload page after 1 second to show updated profile picture from database
-                        setTimeout(function() {
-                            window.location.reload();
-                        }, 1000);
+                        document.getElementById('profilePicStatus').innerHTML = '<span style="color: #10b981;"><i class="fas fa-check-circle"></i> ' + data.message + '</span>';
+                        // Update profile picture immediately and refresh files list
+                        const avatarImg = document.getElementById('profileAvatar');
+                        if (avatarImg && data.file && data.file.url) {
+                            avatarImg.src = data.file.url;
+                        }
+                        // Update navbar avatar
+                        const navbarAvatar = document.querySelector('.navbar .dropdown-toggle img');
+                        if (navbarAvatar && data.file && data.file.url) {
+                            navbarAvatar.src = data.file.url;
+                        }
+                        // Refresh files list
+                        setTimeout(refreshFilesList, 500);
                     } else {
                         document.getElementById('profilePicStatus').innerHTML = '<span style="color: #ef4444;"><i class="fas fa-exclamation-circle"></i> ' + data.error + '</span>';
                     }

@@ -207,11 +207,13 @@ def inject_user():
             # Get professional profile
             prof = db.query(Professional).filter(Professional.user_id == current_user.id).first()
             if prof:
+                # Try to get profile picture from Document table first
                 profile_pic = db.query(Document).filter(
                     Document.professional_id == prof.id,
                     Document.document_type == DocumentType.PROFILE_PICTURE
                 ).first()
-                current_user.profile_picture = profile_pic.file_path if profile_pic else None
+                # Fall back to legacy field if Document doesn't exist
+                current_user.profile_picture = profile_pic.file_path if profile_pic else prof.profile_picture
 
                 requires_registration = (prof.profession_category in ['Health', 'Formal']) if prof.profession_category else False
                 is_verified = bool(requires_registration and prof.registration_number and prof.issuing_body)
