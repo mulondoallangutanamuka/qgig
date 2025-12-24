@@ -18,6 +18,7 @@ from app.routes.analytics import analytics_blueprint
 from app.routes.file_upload_routes import file_upload_blueprint
 from app.routes.messages import messages_blueprint
 from app.routes.rating_routes import rating_routes_blueprint
+from app.routes.admin_seed import admin_seed_blueprint
 import os
 from sqlalchemy import text
 from sqlalchemy import inspect
@@ -126,6 +127,9 @@ def create_app():
     # Register blueprints
     # Web routes (Jinja templates) - no prefix
     app.register_blueprint(web_blueprint)
+    
+    # Admin seeding endpoint
+    app.register_blueprint(admin_seed_blueprint)
     
     # API routes
     app.register_blueprint(health_blueprint)
