@@ -20,6 +20,7 @@ from app.routes.messages import messages_blueprint
 from app.routes.rating_routes import rating_routes_blueprint
 import os
 from sqlalchemy import text
+from sqlalchemy import inspect
 from dotenv import load_dotenv
 
 # Global SocketIO instance
@@ -29,17 +30,25 @@ socketio = None
 def _ensure_notifications_role_context_column(app: Flask) -> None:
     """Ensure notifications.role_context exists (SQLite-safe, no-op if present)."""
     try:
-        with engine.connect() as conn:
-            # Check existing columns
-            cols = conn.execute(text("PRAGMA table_info(notifications)"))
-            col_names = {row[1] for row in cols}  # row[1] is column name
+        inspector = inspect(engine)
+        try:
+            col_names = {col['name'] for col in inspector.get_columns('notifications')}
+        except Exception:
+            # Table may not exist yet.
+            return
 
-            if 'role_context' not in col_names:
-                conn.execute(text("ALTER TABLE notifications ADD COLUMN role_context VARCHAR(50)"))
-                # Best-effort index creation
+        if 'role_context' in col_names:
+            return
+
+        dialect = engine.dialect.name
+        with engine.begin() as conn:
+            if dialect == 'postgresql':
+                conn.execute(text("ALTER TABLE notifications ADD COLUMN IF NOT EXISTS role_context VARCHAR(50)"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_role_context ON notifications (role_context)"))
-                conn.commit()
-                app.logger.info("Added missing column notifications.role_context")
+            else:
+                conn.execute(text("ALTER TABLE notifications ADD COLUMN role_context VARCHAR(50)"))
+                conn.execute(text("CREATE INDEX IF NOT EXISTS ix_notifications_role_context ON notifications (role_context)"))
+        app.logger.info("Added missing column notifications.role_context")
     except Exception as e:
         # Don't prevent app startup; the feature will error and show logs if schema can't be updated.
         app.logger.error(f"Failed to ensure notifications.role_context column: {e}")
@@ -48,19 +57,27 @@ def _ensure_notifications_role_context_column(app: Flask) -> None:
 def _ensure_users_password_reset_columns(app: Flask) -> None:
     """Ensure users.password_reset_token_hash and users.password_reset_expires_at exist (SQLite-safe, no-op if present)."""
     try:
-        with engine.connect() as conn:
-            cols = conn.execute(text("PRAGMA table_info(users)"))
-            col_names = {row[1] for row in cols}
+        inspector = inspect(engine)
+        try:
+            col_names = {col['name'] for col in inspector.get_columns('users')}
+        except Exception:
+            return
 
+        dialect = engine.dialect.name
+        with engine.begin() as conn:
             if 'password_reset_token_hash' not in col_names:
-                conn.execute(text("ALTER TABLE users ADD COLUMN password_reset_token_hash VARCHAR(128)"))
+                if dialect == 'postgresql':
+                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_token_hash VARCHAR(128)"))
+                else:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN password_reset_token_hash VARCHAR(128)"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_password_reset_token_hash ON users (password_reset_token_hash)"))
 
             if 'password_reset_expires_at' not in col_names:
-                conn.execute(text("ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME"))
+                if dialect == 'postgresql':
+                    conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMP"))
+                else:
+                    conn.execute(text("ALTER TABLE users ADD COLUMN password_reset_expires_at DATETIME"))
                 conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_password_reset_expires_at ON users (password_reset_expires_at)"))
-
-            conn.commit()
     except Exception as e:
         app.logger.error(f"Failed to ensure users password reset columns: {e}")
 
