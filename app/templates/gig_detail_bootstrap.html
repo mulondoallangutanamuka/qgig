@@ -1,0 +1,250 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}{{ gig.title }} - QGig{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Gig Header -->
+            <div class="card mb-4 {% if gig.is_urgent %}border-danger{% endif %}">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h1 class="h2 mb-2">{{ gig.title }}</h1>
+                            <p class="mb-0">
+                                <i class="fas fa-building"></i> 
+                                {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <span class="badge badge-{{ gig.status.value if gig.status else '' }} badge-pill">
+                                {{ gig.status.value|upper if gig.status else '' }}
+                            </span>
+                            {% if gig.is_urgent %}
+                            <span class="badge badge-danger ml-2">
+                                <i class="fas fa-fire"></i> URGENT
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Urgent Warning -->
+                    {% if gig.is_urgent %}
+                    <div class="alert alert-danger mb-3">
+                        <h5><i class="fas fa-fire"></i> URGENT GIG</h5>
+                        <p class="mb-0">This gig requires immediate attention!</p>
+                        {% if gig.expiry_date %}
+                        <p class="mb-0">
+                            <i class="fas fa-clock"></i> <strong>Expires:</strong> {{ gig.expiry_date.strftime('%B %d, %Y at %I:%M %p') }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <h4>Description</h4>
+                        <div class="text-muted" style="white-space: pre-wrap;">{{ gig.description }}</div>
+                    </div>
+                    
+                    <!-- Gig Details -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Gig Details</h5>
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-money-bill-wave text-success"></i>
+                                    <strong>Payment:</strong> UGX {{ "{:,.0f}".format(gig.pay_amount) }}
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-map-marker-alt text-danger"></i>
+                                    <strong>Location:</strong> {{ gig.location }}
+                                </li>
+                                {% if gig.duration_hours %}
+                                <li class="mb-2">
+                                    <i class="fas fa-clock text-info"></i>
+                                    <strong>Duration:</strong> {{ gig.duration_hours }} hours
+                                </li>
+                                {% endif %}
+                                {% if gig.job_type %}
+                                <li class="mb-2">
+                                    <i class="fas fa-briefcase text-primary"></i>
+                                    <strong>Type:</strong> {{ gig.job_type }}
+                                </li>
+                                {% endif %}
+                                {% if gig.sector %}
+                                <li class="mb-2">
+                                    <i class="fas fa-industry text-warning"></i>
+                                    <strong>Sector:</strong> {{ gig.sector }}
+                                </li>
+                                {% endif %}
+                                <li class="mb-2">
+                                    <i class="fas fa-calendar text-secondary"></i>
+                                    <strong>Posted:</strong> {{ gig.created_at.strftime('%B %d, %Y') }}
+                                </li>
+                                {% if gig.start_date %}
+                                <li class="mb-2">
+                                    <i class="fas fa-play-circle text-success"></i>
+                                    <strong>Start Date:</strong> {{ gig.start_date.strftime('%B %d, %Y') }}
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h5>Requirements</h5>
+                            <p class="text-muted">Professional requirements and qualifications will be listed here.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    {% if current_user %}
+                        {% if current_user.role == 'professional' and gig.status.value == 'open' %}
+                            {% if gig.user_has_interest %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> You have expressed interest in this gig
+                            </div>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('web.express_interest', gig_id=gig.id) }}" class="mb-3">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-hand-paper"></i> Express Interest
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if current_user.role == 'institution' and gig.institution.user_id == current_user.id %}
+                            {% if gig.status.value == 'open' %}
+                            <div class="btn-group mb-3" role="group">
+                                <a href="{{ url_for('web.edit_gig', gig_id=gig.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i> Edit Gig
+                                </a>
+                                <form method="POST" action="{{ url_for('web.delete_gig', gig_id=gig.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this gig?')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <a href="{{ url_for('web.login') }}">Login</a> or 
+                        <a href="{{ url_for('web.signup') }}">Sign up</a> to apply for this gig
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Interested Professionals -->
+            {% if current_user and current_user.role == 'institution' and gig.institution.user_id == current_user.id %}
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-users"></i> Interested Professionals
+                        {% if gig.interest_count > 0 %}
+                        <span class="badge badge-info">{{ gig.interest_count }}</span>
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if gig.interest_count > 0 %}
+                    <div class="row">
+                        {% for professional in gig.interested_professionals %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if professional.profile_picture %}
+                                        <img src="{{ professional.profile_picture }}" alt="{{ professional.name }}" class="rounded-circle mr-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                        {% else %}
+                                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mr-3" style="width: 50px; height: 50px;">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            <h6 class="mb-0">{{ professional.name }}</h6>
+                                            <small class="text-muted">{{ professional.profession }}</small>
+                                        </div>
+                                    </div>
+                                    <p class="small text-muted mb-2">{{ professional.bio[:100] }}{% if professional.bio|length > 100 %}...{% endif %}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="fas fa-star text-warning"></i> {{ professional.rating or 'N/A' }}
+                                        </small>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('web.professional_profile', professional_id=professional.id) }}" class="btn btn-outline-primary">
+                                                View Profile
+                                            </a>
+                                            <form method="POST" action="{{ url_for('web.assign_gig', gig_id=gig.id, professional_id=professional.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-success">
+                                                    Assign
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No professionals have expressed interest yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Institution Info -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-building"></i> About the Institution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}</h6>
+                    {% if gig.institution.description %}
+                    <p class="small text-muted">{{ gig.institution.description[:200] }}{% if gig.institution.description|length > 200 %}...{% endif %}</p>
+                    {% endif %}
+                    {% if gig.institution.contact_email %}
+                    <p class="small mb-1">
+                        <i class="fas fa-envelope"></i> {{ gig.institution.contact_email }}
+                    </p>
+                    {% endif %}
+                    {% if gig.institution.contact_phone %}
+                    <p class="small mb-1">
+                        <i class="fas fa-phone"></i> {{ gig.institution.contact_phone }}
+                    </p>
+                    {% endif %}
+                    {% if gig.institution.address %}
+                    <p class="small mb-0">
+                        <i class="fas fa-map-marker-alt"></i> {{ gig.institution.address }}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Similar Gigs -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-th-list"></i> Similar Gigs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Similar gigs will be displayed here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

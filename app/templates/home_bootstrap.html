@@ -1,0 +1,212 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Home - QGig{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 font-weight-bold mb-4">
+                    <i class="fas fa-briefcase"></i> Find Your Next Gig
+                </h1>
+                <p class="lead mb-4">Connect with professionals or find quick work opportunities in your area</p>
+                
+                <!-- Search Form -->
+                <div class="input-group input-group-lg mb-4">
+                    <input type="text" class="form-control" placeholder="Search for gigs, skills, or locations..." id="heroSearch">
+                    <div class="input-group-append">
+                        <button class="btn btn-success btn-lg" onclick="searchGigs()">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-list"></i> Browse All Gigs
+                    </a>
+                    {% if not current_user %}
+                    <a href="{{ url_for('web.signup') }}" class="btn btn-light btn-lg text-primary">
+                        <i class="fas fa-user-plus"></i> Get Started
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <i class="fas fa-users fa-10x text-white opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">How QGig Works</h2>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-user-plus fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="card-title">1. Create Account</h4>
+                        <p class="card-text text-muted">Sign up as a professional or institution in seconds</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-search fa-3x text-success"></i>
+                        </div>
+                        <h4 class="card-title">2. Find or Post Gigs</h4>
+                        <p class="card-text text-muted">Browse opportunities or post your requirements</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 text-center border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <i class="fas fa-handshake fa-3x text-warning"></i>
+                        </div>
+                        <h4 class="card-title">3. Connect & Work</h4>
+                        <p class="card-text text-muted">Get matched, complete work, and get paid securely</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Recent Gigs Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Recent Gigs</h2>
+            <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-outline-primary">
+                View All <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <div class="row">
+            {% for gig in recent_gigs %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card gig-card h-100 {% if gig.is_urgent %}border-danger{% endif %}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="card-title mb-1">{{ gig.title }}</h5>
+                            <small class="text-muted">
+                                <i class="fas fa-building"></i> {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
+                            </small>
+                        </div>
+                        <span class="badge badge-{{ gig.status.value if gig.status else '' }} badge-pill">
+                            {{ gig.status.value|upper if gig.status else '' }}
+                        </span>
+                    </div>
+                    
+                    <div class="card-body">
+                        <p class="card-text">{{ gig.description[:150] }}{% if gig.description|length > 150 %}...{% endif %}</p>
+                        
+                        <div class="mb-2">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                            </small>
+                            {% if gig.duration_hours %}
+                            <small class="text-muted ml-3">
+                                <i class="fas fa-clock"></i> {{ gig.duration_hours }}h
+                            </small>
+                            {% endif %}
+                            {% if gig.is_urgent %}
+                            <span class="badge badge-danger ml-2">
+                                <i class="fas fa-fire"></i> URGENT
+                            </span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if gig.is_urgent and gig.expiry_date %}
+                        <div class="alert alert-warning py-2 mb-2">
+                            <small>
+                                <i class="fas fa-hourglass-half"></i> Expires: {{ gig.expiry_date.strftime('%b %d, %I:%M %p') }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-footer bg-transparent">
+                        <div class="mb-2">
+                            <h4 class="text-primary mb-0">UGX {{ "{:,.0f}".format(gig.pay_amount) }}</h4>
+                        </div>
+                        <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary btn-block">
+                            View Details <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No gigs available yet</h4>
+                    <p class="text-muted">Check back soon!</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 col-6 mb-4">
+                <div class="text-center">
+                    <h2 class="display-4 text-primary font-weight-bold">{{ stats.total_gigs }}</h2>
+                    <p class="text-muted">Total Gigs Posted</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="text-center">
+                    <h2 class="display-4 text-success font-weight-bold">{{ stats.total_professionals }}</h2>
+                    <p class="text-muted">Active Professionals</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="text-center">
+                    <h2 class="display-4 text-info font-weight-bold">{{ stats.completed_gigs }}</h2>
+                    <p class="text-muted">Completed Gigs</p>
+                </div>
+            </div>
+            <div class="col-md-3 col-6 mb-4">
+                <div class="text-center">
+                    <h2 class="display-4 text-warning font-weight-bold">UGX {{ "{:,.0f}".format(stats.total_paid) }}</h2>
+                    <p class="text-muted">Total Paid Out</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+function searchGigs() {
+    const query = document.getElementById('heroSearch').value;
+    window.location.href = "{{ url_for('web.browse_gigs') }}?search=" + encodeURIComponent(query);
+}
+
+document.getElementById('heroSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchGigs();
+    }
+});
+</script>
+{% endblock %}

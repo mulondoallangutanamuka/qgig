@@ -1,0 +1,266 @@
+{% extends "base_bootstrap.html" %}
+
+{% block title %}Browse Gigs - QGig{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('web.browse_gigs') }}">
+                        <!-- Search -->
+                        <div class="form-group mb-3">
+                            <label for="search" class="font-weight-bold">Search</label>
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   value="{{ request.args.get('search', '') }}" placeholder="Search gigs...">
+                        </div>
+                        
+                        <!-- Location -->
+                        <div class="form-group mb-3">
+                            <label for="location" class="font-weight-bold">Location</label>
+                            <select class="form-control" id="location" name="location">
+                                <option value="">All Locations</option>
+                                {% for loc in locations %}
+                                <option value="{{ loc }}" {% if request.args.get('location') == loc %}selected{% endif %}>
+                                    {{ loc }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Job Type -->
+                        <div class="form-group mb-3">
+                            <label for="job_type" class="font-weight-bold">Job Type</label>
+                            <select class="form-control" id="job_type" name="job_type">
+                                <option value="">All Types</option>
+                                <option value="Full-time" {% if request.args.get('job_type') == 'Full-time' %}selected{% endif %}>Full-time</option>
+                                <option value="Part-time" {% if request.args.get('job_type') == 'Part-time' %}selected{% endif %}>Part-time</option>
+                                <option value="Contract" {% if request.args.get('job_type') == 'Contract' %}selected{% endif %}>Contract</option>
+                                <option value="Temporary" {% if request.args.get('job_type') == 'Temporary' %}selected{% endif %}>Temporary</option>
+                                <option value="Freelance" {% if request.args.get('job_type') == 'Freelance' %}selected{% endif %}>Freelance</option>
+                                <option value="Internship" {% if request.args.get('job_type') == 'Internship' %}selected{% endif %}>Internship</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Sector -->
+                        <div class="form-group mb-3">
+                            <label for="sector" class="font-weight-bold">Sector</label>
+                            <select class="form-control" id="sector" name="sector">
+                                <option value="">All Sectors</option>
+                                <option value="Healthcare" {% if request.args.get('sector') == 'Healthcare' %}selected{% endif %}>Healthcare</option>
+                                <option value="Education" {% if request.args.get('sector') == 'Education' %}selected{% endif %}>Education</option>
+                                <option value="Technology" {% if request.args.get('sector') == 'Technology' %}selected{% endif %}>Technology</option>
+                                <option value="Finance" {% if request.args.get('sector') == 'Finance' %}selected{% endif %}>Finance</option>
+                                <option value="Legal" {% if request.args.get('sector') == 'Legal' %}selected{% endif %}>Legal</option>
+                                <option value="Construction" {% if request.args.get('sector') == 'Construction' %}selected{% endif %}>Construction</option>
+                                <option value="Hospitality" {% if request.args.get('sector') == 'Hospitality' %}selected{% endif %}>Hospitality</option>
+                                <option value="Retail" {% if request.args.get('sector') == 'Retail' %}selected{% endif %}>Retail</option>
+                                <option value="Manufacturing" {% if request.args.get('sector') == 'Manufacturing' %}selected{% endif %}>Manufacturing</option>
+                                <option value="Agriculture" {% if request.args.get('sector') == 'Agriculture' %}selected{% endif %}>Agriculture</option>
+                                <option value="Transportation" {% if request.args.get('sector') == 'Transportation' %}selected{% endif %}>Transportation</option>
+                                <option value="Other" {% if request.args.get('sector') == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Urgent Filter -->
+                        <div class="form-group mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="urgent" name="urgent" value="1" 
+                                       {% if request.args.get('urgent') %}checked{% endif %}>
+                                <label class="form-check-label" for="urgent">
+                                    <strong class="text-danger">Urgent Only</strong>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Sort -->
+                        <div class="form-group mb-3">
+                            <label for="sort" class="font-weight-bold">Sort By</label>
+                            <select class="form-control" id="sort" name="sort">
+                                <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest First</option>
+                                <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                                <option value="price_high" {% if request.args.get('sort') == 'price_high' %}selected{% endif %}>Highest Price</option>
+                                <option value="price_low" {% if request.args.get('sort') == 'price_low' %}selected{% endif %}>Lowest Price</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-block mb-2">
+                            <i class="fas fa-search"></i> Apply Filters
+                        </button>
+                        <a href="{{ url_for('web.browse_gigs') }}" class="btn btn-outline-secondary btn-block">
+                            <i class="fas fa-times"></i> Clear Filters
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Gigs Grid -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Results Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4>
+                    {% if gigs %}
+                        Found {{ pagination.total }} gig{{ 's' if pagination.total != 1 else '' }}
+                    {% else %}
+                        No gigs found
+                    {% endif %}
+                </h4>
+                {% if current_user and current_user.role.value == 'institution' %}
+                <a href="{{ url_for('web.post_gig') }}" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Post New Gig
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Gigs Grid -->
+            {% if gigs %}
+            <div class="row">
+                {% for gig in gigs %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card gig-card h-100 {% if gig.is_urgent %}border-danger{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">{{ gig.title }}</h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-building"></i> {{ gig.institution.institution_name or gig.institution.contact_email or 'Institution' }}
+                                </small>
+                            </div>
+                            <span class="badge badge-{{ gig.status.value if gig.status else '' }} badge-pill">
+                                {{ gig.status.value|upper if gig.status else '' }}
+                            </span>
+                        </div>
+                        
+                        <div class="card-body">
+                            <p class="card-text">{{ gig.description[:200] }}{% if gig.description|length > 200 %}...{% endif %}</p>
+                            
+                            <div class="mb-2">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="fas fa-map-marker-alt"></i> {{ gig.location }}
+                                </small>
+                                {% if gig.duration_hours %}
+                                <small class="text-muted d-block mb-1">
+                                    <i class="fas fa-clock"></i> {{ gig.duration_hours }} hours
+                                </small>
+                                {% endif %}
+                                <small class="text-muted d-block mb-1">
+                                    <i class="fas fa-calendar"></i> {{ gig.created_at.strftime('%b %d, %Y') }}
+                                </small>
+                                {% if gig.is_urgent %}
+                                <span class="badge badge-danger">
+                                    <i class="fas fa-fire"></i> URGENT
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if gig.is_urgent and gig.expiry_date %}
+                            <div class="alert alert-warning py-2 mb-2">
+                                <small>
+                                    <i class="fas fa-hourglass-half"></i> Expires: {{ gig.expiry_date.strftime('%b %d, %I:%M %p') }}
+                                </small>
+                            </div>
+                            {% endif %}
+                            
+                            {% if gig.interest_count > 0 %}
+                            <div class="text-muted small mb-2">
+                                <i class="fas fa-users"></i> {{ gig.interest_count }} professional(s) interested
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h4 class="text-primary mb-0">UGX {{ "{:,.0f}".format(gig.pay_amount) }}</h4>
+                                {% if current_user and current_user.role == 'professional' %}
+                                {% if gig.user_has_interest %}
+                                <span class="badge badge-success">Interest Expressed</span>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('web.gig_detail', gig_id=gig.id) }}" class="btn btn-primary flex-fill">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                {% if current_user and current_user.role == 'professional' and gig.status.value == 'open' %}
+                                {% if not gig.user_has_interest %}
+                                <form method="POST" action="{{ url_for('web.express_interest', gig_id=gig.id) }}" class="mb-0">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-hand-paper"></i> Apply
+                                    </button>
+                                </form>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Gigs pagination">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('web.browse_gigs', page=pagination.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i> Previous
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in pagination.iter_pages() %}
+                    {% if page_num %}
+                        {% if page_num != pagination.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('web.browse_gigs', page=page_num, **request.args) }}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                        {% endif %}
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('web.browse_gigs', page=pagination.next_num, **request.args) }}">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+            {% else %}
+            <!-- No Results -->
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No gigs found</h4>
+                <p class="text-muted">Try adjusting your filters or <a href="{{ url_for('web.browse_gigs') }}">browse all gigs</a></p>
+                {% if current_user and current_user.role.value == 'institution' %}
+                <p class="mt-3">
+                    <a href="{{ url_for('web.post_gig') }}" class="btn btn-primary">
+                        <i class="fas fa-plus-circle"></i> Post a New Gig
+                    </a>
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
