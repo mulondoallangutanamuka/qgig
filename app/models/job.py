@@ -28,6 +28,7 @@ class Job(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     start_date = Column(DateTime, nullable=True)
+    expiry_date = Column(DateTime, nullable=True, index=True)
     job_type = Column(String(100), nullable=True, index=True)
     sector = Column(String(100), nullable=True, index=True)
     

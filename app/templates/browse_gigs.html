@@ -146,6 +146,12 @@
                 {% endif %}
             </div>
             
+            {% if gig.is_urgent and gig.expiry_date %}
+            <div style="margin-top: 0.5rem; padding: 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.875rem;">
+                <i class="fas fa-hourglass-half"></i> Expires: {{ gig.expiry_date.strftime('%b %d, %I:%M %p') }}
+            </div>
+            {% endif %}
+            
             {% if gig.interest_count > 0 %}
             <div style="margin-top: 1rem; color: var(--gray-600); font-size: 0.875rem;">
                 <i class="fas fa-users"></i> {{ gig.interest_count }} professional(s) interested

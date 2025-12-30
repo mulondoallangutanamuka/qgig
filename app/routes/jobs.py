@@ -26,6 +26,11 @@ def create_job(current_user):
         if not data.get('location') or not data.get('pay_amount'):
             return jsonify({"error": "Location and pay amount are required"}), 400
         
+        # Handle expiry date for urgent gigs
+        expiry_date = None
+        if data.get('is_urgent') and data.get('expiry_date'):
+            expiry_date = datetime.fromisoformat(data['expiry_date'])
+        
         job = Job(
             institution_id=institution.id,
             title=data['title'],
@@ -34,6 +39,7 @@ def create_job(current_user):
             pay_amount=float(data['pay_amount']),
             duration_hours=data.get('duration_hours'),
             is_urgent=data.get('is_urgent', False),
+            expiry_date=expiry_date,
             start_date=datetime.fromisoformat(data['start_date']) if data.get('start_date') else None
         )
         db.add(job)
@@ -62,7 +68,11 @@ def list_jobs():
     try:
         status_filter = request.args.get('status', 'open')
         
+        # Filter out expired gigs
         query = db.query(Job).filter(Job.status == JobStatus.OPEN)
+        query = query.filter(
+            (Job.expiry_date == None) | (Job.expiry_date > datetime.utcnow())
+        )
         jobs = query.order_by(Job.created_at.desc()).all()
         
         return jsonify({

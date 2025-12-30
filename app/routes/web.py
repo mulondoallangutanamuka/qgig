@@ -390,8 +390,12 @@ def home():
     db = SessionLocal()
     
     try:
-        # Get recent gigs with eagerly loaded institution
-        recent_gigs = db.query(Job).options(joinedload(Job.institution)).filter(Job.status == JobStatus.OPEN).order_by(desc(Job.created_at)).limit(6).all()
+        # Get recent gigs with eagerly loaded institution, excluding expired ones
+        recent_gigs = db.query(Job).options(joinedload(Job.institution)).filter(
+            Job.status == JobStatus.OPEN
+        ).filter(
+            (Job.expiry_date == None) | (Job.expiry_date > datetime.utcnow())
+        ).order_by(desc(Job.created_at)).limit(6).all()
         
         # Add interest count to each gig
         for gig in recent_gigs:
@@ -649,8 +653,13 @@ def browse_gigs():
         page = int(request.args.get('page', 1))
         per_page = 12
         
-        # Build query with eager loading
+        # Build query with eager loading, excluding expired gigs
         query = db.query(Job).options(joinedload(Job.institution))
+        
+        # Filter out expired gigs
+        query = query.filter(
+            (Job.expiry_date == None) | (Job.expiry_date > datetime.utcnow())
+        )
         
         if search:
             query = query.filter(or_(
@@ -783,6 +792,11 @@ def post_gig():
             db.close()
             return redirect(url_for('web.profile'))
         
+        # Handle expiry date for urgent gigs
+        expiry_date = None
+        if request.form.get('is_urgent') and request.form.get('expiry_date'):
+            expiry_date = datetime.fromisoformat(request.form.get('expiry_date'))
+        
         # Create gig
         gig = Job(
             institution_id=institution.id,
@@ -794,6 +808,7 @@ def post_gig():
             pay_amount=float(request.form.get('pay_amount')),
             duration_hours=float(request.form.get('duration_hours')) if request.form.get('duration_hours') else None,
             is_urgent=bool(request.form.get('is_urgent')),
+            expiry_date=expiry_date,
             status=JobStatus.OPEN
         )
         
@@ -3210,6 +3225,12 @@ def edit_gig(gig_id):
             gig.pay_amount = float(request.form.get('pay_amount'))
             gig.duration_hours = float(request.form.get('duration_hours')) if request.form.get('duration_hours') else None
             gig.is_urgent = bool(request.form.get('is_urgent'))
+            
+            # Handle expiry date for urgent gigs
+            if gig.is_urgent and request.form.get('expiry_date'):
+                gig.expiry_date = datetime.fromisoformat(request.form.get('expiry_date'))
+            else:
+                gig.expiry_date = None
             
             db.commit()
             flash('Gig updated successfully!', 'success')

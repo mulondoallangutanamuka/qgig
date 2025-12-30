@@ -97,7 +97,7 @@
                     
                     <div class="form-group">
                         <div class="form-check">
-                            <input type="checkbox" id="is_urgent" name="is_urgent" value="1">
+                            <input type="checkbox" id="is_urgent" name="is_urgent" value="1" onchange="toggleExpiryDate()">
                             <label for="is_urgent">
                                 <strong style="color: var(--danger-color);">
                                     <i class="fas fa-fire"></i> Mark as URGENT
@@ -106,6 +106,16 @@
                                 <small style="color: var(--gray-600);">Urgent gigs get priority visibility</small>
                             </label>
                         </div>
+                    </div>
+                    
+                    <div class="form-group" id="expiry_date_group" style="display: none;">
+                        <label class="form-label" for="expiry_date">
+                            <i class="fas fa-calendar-times"></i> Expiry Date & Time *
+                        </label>
+                        <input type="datetime-local" id="expiry_date" name="expiry_date" class="form-control">
+                        <small style="color: var(--gray-600);">
+                            The gig will automatically be removed from listings after this date
+                        </small>
                     </div>
                     
                     <hr style="margin: 2rem 0;">
@@ -139,4 +149,32 @@
         </div>
     </div>
 </div>
+
+<script>
+function toggleExpiryDate() {
+    const isUrgent = document.getElementById('is_urgent').checked;
+    const expiryGroup = document.getElementById('expiry_date_group');
+    const expiryInput = document.getElementById('expiry_date');
+    
+    if (isUrgent) {
+        expiryGroup.style.display = 'block';
+        expiryInput.required = true;
+        
+        // Set minimum date to current time
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        expiryInput.min = now.toISOString().slice(0, 16);
+        
+        // Set default to 24 hours from now
+        const tomorrow = new Date();
+        tomorrow.setHours(tomorrow.getHours() + 24);
+        tomorrow.setMinutes(tomorrow.getMinutes() - tomorrow.getTimezoneOffset());
+        expiryInput.value = tomorrow.toISOString().slice(0, 16);
+    } else {
+        expiryGroup.style.display = 'none';
+        expiryInput.required = false;
+        expiryInput.value = '';
+    }
+}
+</script>
 {% endblock %}
