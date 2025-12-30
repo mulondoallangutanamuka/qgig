@@ -17,5 +17,6 @@ class Settings:
     PESAPAL_CONSUMER_KEY = os.getenv("PESAPAL_CONSUMER_KEY")
     PESAPAL_CONSUMER_SECRET = os.getenv("PESAPAL_CONSUMER_SECRET")
     PESAPAL_CALLBACK_URL = os.getenv("PESAPAL_CALLBACK_URL")
+    PESAPAL_BASE_URL = os.getenv("PESAPAL_BASE_URL", "https://cybqa.pesapal.com/pesapalv3/api")
 
 settings = Settings()

@@ -71,15 +71,30 @@ def initiate_payment(current_user):
                 phone=institution.phone or "0700000000",
                 merchant_reference=merchant_reference
             )
-            
-            payment.pesapal_order_tracking_id = response.get('order_tracking_id')
+
+            order_tracking_id = (
+                response.get('order_tracking_id')
+                or response.get('OrderTrackingId')
+                or response.get('orderTrackingId')
+                or response.get('OrderTrackingID')
+            )
+            redirect_url = (
+                response.get('redirect_url')
+                or response.get('RedirectURL')
+                or response.get('redirectUrl')
+            )
+
+            if not order_tracking_id:
+                raise Exception(f"Payment provider did not return order tracking id: {response}")
+
+            payment.pesapal_order_tracking_id = order_tracking_id
             db.commit()
             
             return jsonify({
                 "message": "Payment initiated successfully",
                 "payment_id": payment.id,
-                "redirect_url": response.get('redirect_url'),
-                "order_tracking_id": response.get('order_tracking_id')
+                "redirect_url": redirect_url,
+                "order_tracking_id": order_tracking_id
             }), 201
             
         except Exception as e:

@@ -3,10 +3,13 @@ from app.config import settings
 import uuid
 
 class PesaPal:
-    BASE_URL = "https://cybqa.pesapal.com/pesapalv3/api"
+    BASE_URL = settings.PESAPAL_BASE_URL
     _ipn_id = None
 
     def get_token(self):
+        if not settings.PESAPAL_CONSUMER_KEY or not settings.PESAPAL_CONSUMER_SECRET:
+            raise ValueError("Missing PESAPAL_CONSUMER_KEY and/or PESAPAL_CONSUMER_SECRET in environment")
+
         url = f"{self.BASE_URL}/Auth/RequestToken"
 
         payload = {
@@ -15,15 +18,30 @@ class PesaPal:
         }
 
         try:
-            response = requests.post(url, json=payload, headers={"Content-Type": "application/json"})
-            response.raise_for_status()
-            return response.json()["token"]
+            response = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=30)
+
+            try:
+                data = response.json()
+            except Exception:
+                raise Exception(f"PesaPal token error: non-JSON response (status={response.status_code}): {response.text}")
+
+            if not response.ok:
+                raise Exception(f"PesaPal token request failed (status={response.status_code}): {data}")
+
+            token = data.get("token") or data.get("Token") or data.get("access_token")
+            if not token:
+                raise Exception(f"PesaPal token missing in response (status={response.status_code}): {data}")
+
+            return token
         except Exception as e:
             print(f"PesaPal token error: {e}")
             raise
 
     def register_ipn(self, token):
         """Register IPN URL and get IPN ID"""
+        if not settings.PESAPAL_CALLBACK_URL:
+            raise ValueError("Missing PESAPAL_CALLBACK_URL in environment")
+
         if self._ipn_id:
             return self._ipn_id
             
@@ -40,7 +58,7 @@ class PesaPal:
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
             response.raise_for_status()
             data = response.json()
             self._ipn_id = data.get("ipn_id")
@@ -115,9 +133,17 @@ class PesaPal:
         }
 
         try:
-            response = requests.post(url, json=payload, headers=headers)
-            response.raise_for_status()
-            return response.json()
+            response = requests.post(url, json=payload, headers=headers, timeout=30)
+
+            try:
+                data = response.json()
+            except Exception:
+                raise Exception(f"PesaPal payment initiation error: non-JSON response (status={response.status_code}): {response.text}")
+
+            if not response.ok:
+                raise Exception(f"PesaPal payment initiation failed (status={response.status_code}): {data}")
+
+            return data
         except Exception as e:
             print(f"PesaPal payment initiation error: {e}")
             print(f"Response: {response.text if 'response' in locals() else 'No response'}")
@@ -136,9 +162,17 @@ class PesaPal:
         params = {"orderTrackingId": order_tracking_id}
 
         try:
-            response = requests.get(url, params=params, headers=headers)
-            response.raise_for_status()
-            return response.json()
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+
+            try:
+                data = response.json()
+            except Exception:
+                raise Exception(f"PesaPal status check error: non-JSON response (status={response.status_code}): {response.text}")
+
+            if not response.ok:
+                raise Exception(f"PesaPal status check failed (status={response.status_code}): {data}")
+
+            return data
         except Exception as e:
             print(f"PesaPal status check error: {e}")
             raise
