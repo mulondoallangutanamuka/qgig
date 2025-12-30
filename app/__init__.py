@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 from flask_login import LoginManager
-from flask_bootstrap import Bootstrap4
+from flask_bootstrap import Bootstrap
 from app.database import Base, engine, SessionLocal
 from app.models import role as _role_models
 from app.routes.auth import auth_blueprint
@@ -108,7 +108,7 @@ def create_app():
     login_manager.login_view = 'web.login'
     
     # Initialize Flask-Bootstrap
-    bootstrap = Bootstrap4(app)
+    bootstrap = Bootstrap(app)
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -124,7 +124,7 @@ def create_app():
     socketio = SocketIO(app, 
                        cors_allowed_origins="*", 
                        manage_session=True,
-                       async_mode='eventlet',
+                       async_mode='threading',
                        logger=True,
                        engineio_logger=True)
 

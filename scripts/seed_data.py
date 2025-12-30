@@ -61,7 +61,7 @@ def seed() -> None:
     try:
         admin = _get_or_create_user(db, admin_email, admin_password, UserRole.ADMIN, username="admin")
         _ensure_profiles(db, admin)
-
+ 
         institution_user = _get_or_create_user(
             db,
             institution_email,
