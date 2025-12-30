@@ -409,7 +409,7 @@ def home():
             'total_paid': db.query(func.sum(Payment.amount)).filter(Payment.status == TransactionStatus.COMPLETED).scalar() or 0
         }
         
-        return render_template('home_bootstrap.html', recent_gigs=recent_gigs, stats=stats)
+        return render_template('home.html', recent_gigs=recent_gigs, stats=stats)
     finally:
         db.close()
 
@@ -738,7 +738,7 @@ def browse_gigs():
         
         pagination = Pagination(page, per_page, total)
         
-        return render_template('browse_gigs_bootstrap.html', gigs=gigs, locations=locations, pagination=pagination)
+        return render_template('browse_gigs.html', gigs=gigs, locations=locations, pagination=pagination)
     finally:
         db.close()
 
@@ -773,7 +773,7 @@ def gig_detail(gig_id):
                     ).first()
                     user_has_interest = existing_interest is not None
         
-        return render_template('gig_detail_bootstrap.html', gig=gig, user_has_interest=user_has_interest)
+        return render_template('gig_detail.html', gig=gig, user_has_interest=user_has_interest)
     finally:
         db.close()
 
