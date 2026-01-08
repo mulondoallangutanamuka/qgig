@@ -5,10 +5,16 @@ load_dotenv()
 
 class Settings:
     _raw_db_url = os.getenv("DATABASE_URL")
-    if _raw_db_url and _raw_db_url.startswith("postgres://"):
+    if not _raw_db_url:
+        raise RuntimeError("DATABASE_URL environment variable is not set")
+    
+    if _raw_db_url.startswith("postgres://"):
         # Render and some providers still use the deprecated scheme.
         # SQLAlchemy expects postgresql:// (or postgresql+psycopg2://).
         DB_URL = _raw_db_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif _raw_db_url.startswith("postgresql://"):
+        # Add psycopg2 driver if not specified
+        DB_URL = _raw_db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
     else:
         DB_URL = _raw_db_url
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-secret-key-change-in-production")
