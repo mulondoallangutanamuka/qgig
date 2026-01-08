@@ -27,7 +27,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     
     # Status tracking
-    status = Column(SQLEnum(MessageStatus), default=MessageStatus.SENT, nullable=False)
+    status = Column(SQLEnum(MessageStatus, values_callable=lambda x: [e.value for e in x]), default=MessageStatus.SENT, nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
     read_at = Column(DateTime, nullable=True)
     

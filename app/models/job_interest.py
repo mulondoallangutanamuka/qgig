@@ -15,7 +15,7 @@ class JobInterest(Base):
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(Integer, ForeignKey("jobs.id", ondelete="CASCADE"), nullable=False, index=True)
     professional_id = Column(Integer, ForeignKey("professionals.id", ondelete="CASCADE"), nullable=False, index=True)
-    status = Column(SQLEnum(InterestStatus), default=InterestStatus.PENDING, nullable=False)
+    status = Column(SQLEnum(InterestStatus, values_callable=lambda x: [e.value for e in x]), default=InterestStatus.PENDING, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     

@@ -23,7 +23,7 @@ class Job(Base):
     pay_amount = Column(Float, nullable=False)
     duration_hours = Column(Float)
     is_urgent = Column(Boolean, default=False)
-    status = Column(Enum(JobStatus), default=JobStatus.OPEN, nullable=False)
+    status = Column(Enum(JobStatus, values_callable=lambda x: [e.value for e in x]), default=JobStatus.OPEN, nullable=False)
     assigned_professional_id = Column(Integer, ForeignKey("professionals.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

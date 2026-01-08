@@ -23,7 +23,7 @@ class Payment(Base):
     pesapal_merchant_reference = Column(String, unique=True, nullable=False, index=True)
     pesapal_transaction_id = Column(String, nullable=True)
     
-    status = Column(Enum(TransactionStatus), default=TransactionStatus.PENDING, nullable=False, index=True)
+    status = Column(Enum(TransactionStatus, values_callable=lambda x: [e.value for e in x]), default=TransactionStatus.PENDING, nullable=False, index=True)
     payment_method = Column(String, nullable=True)
     
     created_at = Column(DateTime, default=datetime.utcnow)
