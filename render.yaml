@@ -16,12 +16,4 @@ services:
       - key: JWT_ALGORITHM
         value: HS256
       - key: DATABASE_URL
-        fromDatabase:
-          name: qgig-db
-          property: connectionString
-
-databases:
-  - name: qgig-db
-    plan: free
-    databaseName: qgig
-    user: qgig
+        sync: false  # Set manually in Render dashboard with Supabase connection string
